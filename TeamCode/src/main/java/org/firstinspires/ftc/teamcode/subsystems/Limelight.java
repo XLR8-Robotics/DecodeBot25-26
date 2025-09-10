@@ -1,124 +1,146 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import org.firstinspires.ftc.teamcode.TuningConfig;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.TuningConfig; // For APRILTAG_ID_TO_NAME
+import org.firstinspires.ftc.teamcode.config.LimelightConfig;
+
+import java.util.List;
 
 /**
- * Limelight 3A subsystem (HTTP JSON polling) for AprilTag detections on FTC.
- *
- * Notes:
- * - This polls the Limelight JSON endpoint and parses minimal fields needed for FTC.
- * - You may need to set your Limelight to "apriltag" pipeline on the web UI.
- * - Uses TuningConfig for IP/host and optional tag-id-to-name mapping.
+ * Limelight 3A subsystem using the official FTC SDK Limelight3A class.
  */
 public class Limelight {
-    private final String baseUrl; // e.g. http://10.xx.yy.11:5807
+    private final Limelight3A limelightHardware;
+    private LLResult lastResult = null;
 
-    // Last results
-    private boolean hasTargets;
-    private int bestTagId = -1;
-    private double tx;
-    private double ty;
-    private double[] botpose = new double[0];
-
-    public Limelight() {
-        this.baseUrl = "http://" + TuningConfig.LIMELIGHT_HOST + ":5807";
+    public Limelight(HardwareMap hardwareMap, LimelightConfig config) {
+        if (hardwareMap == null) {
+            throw new IllegalArgumentException("HardwareMap cannot be null.");
+        }
+        if (config == null) {
+            throw new IllegalArgumentException("LimelightConfig cannot be null.");
+        }
+        limelightHardware = hardwareMap.get(Limelight3A.class, config.getHardwareName());
     }
 
-    /** Polls Limelight for the latest results. Call periodically (e.g., each loop). */
-    public void update() {
-        try {
-            JSONObject root = getJson(baseUrl + "/json");
-            if (root == null) {
-                hasTargets = false;
-                bestTagId = -1;
-                return;
-            }
-
-            JSONObject results = root.optJSONObject("Results");
-            if (results == null) {
-                hasTargets = false;
-                bestTagId = -1;
-                return;
-            }
-
-            // Overall target valid flag\best target fields
-            hasTargets = results.optBoolean("Valid", false) || results.optInt("tv", 0) == 1;
-            bestTagId = results.optInt("tid", -1);
-            tx = results.optDouble("tx", 0.0);
-            ty = results.optDouble("ty", 0.0);
-
-            JSONArray botposeArray = results.optJSONArray("botpose");
-            if (botposeArray != null) {
-                botpose = new double[botposeArray.length()];
-                for (int i = 0; i < botposeArray.length(); i++) {
-                    botpose[i] = botposeArray.optDouble(i, Double.NaN);
-                }
-            }
-
-            // If bestTagId was not provided, try the first fiducial result
-            if (bestTagId < 0) {
-                JSONArray fiducials = results.optJSONArray("FiducialResults");
-                if (fiducials != null && fiducials.length() > 0) {
-                    JSONObject f0 = fiducials.optJSONObject(0);
-                    if (f0 != null) {
-                        bestTagId = f0.optInt("fID", -1);
-                        tx = f0.optDouble("tx", tx);
-                        ty = f0.optDouble("ty", ty);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            hasTargets = false;
-            bestTagId = -1;
+    /**
+     * Starts polling for data from the Limelight.
+     * Call this once, e.g., in OpMode init or Robot constructor.
+     */
+    public void start() {
+        if (limelightHardware != null) {
+            limelightHardware.start();
         }
     }
 
-    public boolean hasTargets() { return hasTargets; }
-    public int getBestTagId() { return bestTagId; }
-    public double getTx() { return tx; }
-    public double getTy() { return ty; }
-    public double[] getBotpose() { return botpose; }
+    /**
+     * Stops polling for data from the Limelight.
+     * Call this when the OpMode ends.
+     */
+    public void stop() {
+        if (limelightHardware != null) {
+            limelightHardware.stop();
+        }
+    }
 
-    /** Returns a human-friendly name for the detected tag id based on TuningConfig mapping. */
+    /**
+     * Switches the Limelight's active pipeline.
+     * @param pipelineIndex The index of the pipeline to switch to (0-9).
+     */
+    public void pipelineSwitch(int pipelineIndex) {
+        if (limelightHardware != null) {
+            limelightHardware.pipelineSwitch(pipelineIndex);
+        }
+    }
+
+    /**
+     * Gets the current status of the Limelight.
+     * @return LLStatus object, or null if hardware not initialized.
+     */
+    public LLStatus getStatus() {
+        return limelightHardware != null ? limelightHardware.getStatus() : null;
+    }
+
+    /**
+     * Fetches and stores the latest result from the Limelight.
+     * This should be called periodically (e.g., in your main loop) to get fresh data.
+     */
+    public void updateResult() {
+        if (limelightHardware != null) {
+            lastResult = limelightHardware.getLatestResult();
+        }
+    }
+    
+    /**
+     * Returns the most recently fetched result.
+     * Call updateResult() before this to ensure data is fresh.
+     * @return LLResult object, or null if no result available or hardware not initialized.
+     */
+    public LLResult getLatestResult() {
+        return lastResult;
+    }
+
+    /**
+     * Checks if the last fetched result is valid and contains targets.
+     * @return true if targets are present, false otherwise.
+     */
+    public boolean hasTargets() {
+        return lastResult != null && lastResult.isValid();
+    }
+
+    /**
+     * Gets the ID of the best/first detected AprilTag fiducial from the last fetched result.
+     * @return The ID of the first fiducial, or -1 if no fiducials are detected or result is invalid.
+     */
+    public int getBestTagId() {
+        if (hasTargets()) {
+            List<LLResultTypes.FiducialResult> fiducialResults = lastResult.getFiducialResults();
+            if (fiducialResults != null && !fiducialResults.isEmpty()) {
+                return fiducialResults.get(0).getFiducialId();
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Gets the target's crosshair-relative horizontal offset from the last fetched result.
+     * @return tx value, or 0.0 if no valid target.
+     */
+    public double getTx() {
+        return hasTargets() ? lastResult.getTx() : 0.0;
+    }
+
+    /**
+     * Gets the target's crosshair-relative vertical offset from the last fetched result.
+     * @return ty value, or 0.0 if no valid target.
+     */
+    public double getTy() {
+        return hasTargets() ? lastResult.getTy() : 0.0;
+    }
+
+    /**
+     * Gets the robot's pose in the AprilTag field coordinate system from the last fetched result.
+     * This is the {@code botpose_targetspace} result from the Limelight.
+     * @return Pose3D object, or null if no valid botpose is available.
+     */
+    public Pose3D getBotPose() {
+        return hasTargets() ? lastResult.getBotpose() : null;
+    }
+
+    /**
+     * Returns a human-friendly name for the detected tag id based on TuningConfig mapping.
+     * @return The friendly name, "None" if no tag, or "Tag [id]" if unmapped.
+     */
     public String getBestTagName() {
-        if (bestTagId < 0) return "None";
-        String name = TuningConfig.APRILTAG_ID_TO_NAME.get(bestTagId);
-        return name != null ? name : ("Tag " + bestTagId);
-    }
-
-    private JSONObject getJson(String url) throws IOException, JSONException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setConnectTimeout(200);
-        conn.setReadTimeout(200);
-        conn.setUseCaches(false);
-        conn.setRequestMethod("GET");
-        conn.connect();
-        int code = conn.getResponseCode();
-        if (code != 200) return null;
-        try (InputStream is = conn.getInputStream();
-             InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-             BufferedReader br = new BufferedReader(isr)) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-            return new JSONObject(sb.toString());
-        } finally {
-            conn.disconnect();
-        }
+        int tagId = getBestTagId();
+        if (tagId < 0) return "None";
+        String name = TuningConfig.APRILTAG_ID_TO_NAME.get(tagId);
+        return name != null ? name : ("Tag " + tagId);
     }
 }
-
-

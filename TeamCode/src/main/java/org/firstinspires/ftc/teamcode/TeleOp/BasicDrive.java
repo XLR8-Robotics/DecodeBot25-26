@@ -4,6 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.TuningConfig;
+import org.firstinspires.ftc.teamcode.config.DcMotorConfig;
+import org.firstinspires.ftc.teamcode.config.OdometryConfig;
+import org.firstinspires.ftc.teamcode.config.LimelightConfig; // Added import
 import org.firstinspires.ftc.teamcode.pedroPathing.PanelsHelper;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
@@ -11,23 +14,19 @@ import org.firstinspires.ftc.teamcode.subsystems.Robot;
 public class BasicDrive extends OpMode {
     private Robot robot;
 
-    // REQUIRED: change these to match your RC configuration motor names
-    private static final String LF = "leftFront";
-    private static final String LR = "leftRear";
-    private static final String RF = "rightFront";
-    private static final String RR = "rightRear";
-
     @Override
     public void init() {
-        robot = new Robot(hardwareMap, LF, LR, RF, RR);
+        robot = new Robot(hardwareMap,
+                        DcMotorConfig.LEFT_FRONT,
+                        DcMotorConfig.LEFT_REAR,
+                        DcMotorConfig.RIGHT_FRONT,
+                        DcMotorConfig.RIGHT_REAR,
+                        LimelightConfig.LIMELIGHT_DEFAULT); // Added LimelightConfig
 
         // OPTIONAL (enable if using goBILDA Pinpoint):
-        // - device name must match RC config (commonly "pinpoint")
-        // - offsets are in millimeters: x = left(+)/right(-) of center, y = forward(+)/back(-) of center
-        // - encoder directions must match your pod directions
+        // Updated to use OdometryConfig enum
         try {
-            // EXAMPLE OFFSETS ONLY — UPDATE FOR YOUR ROBOT
-            robot.configureOdometry("pinpoint", -84.0, -168.0, true, true, true);
+            robot.configureOdometry(OdometryConfig.PINPOINT);
         } catch (Exception ignored) {}
     }
 
@@ -45,7 +44,20 @@ public class BasicDrive extends OpMode {
         telemetry.addData("Pose Y", robot.getDriveTrain().getPose().getY());
         telemetry.addData("Heading", robot.getDriveTrain().getPose().getHeading());
         PanelsHelper.drawDebug(robot.getDriveTrain().getFollower());
+
+        // Example of how to get Limelight data in your OpMode
+        if (robot.getLimelight() != null && robot.getLimelight().hasTargets()) {
+            telemetry.addData("Limelight Tag ID", robot.getLimelight().getBestTagId());
+            telemetry.addData("Limelight Tag Name", robot.getLimelight().getBestTagName());
+            telemetry.addData("Limelight TX", "%.2f", robot.getLimelight().getTx());
+            telemetry.addData("Limelight TY", "%.2f", robot.getLimelight().getTy());
+        }
+    }
+
+    @Override
+    public void stop() {
+        if (robot != null) {
+            robot.stopRobot(); // Call stopRobot to stop Limelight and other subsystems
+        }
     }
 }
-
-

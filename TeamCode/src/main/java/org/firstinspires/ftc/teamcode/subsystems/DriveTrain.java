@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.config.DcMotorConfig;
+import org.firstinspires.ftc.teamcode.config.OdometryConfig; // Added import
 
 /**
  * DriveTrain subsystem that wraps Pedro Pathing's Follower.
@@ -49,6 +51,16 @@ public class DriveTrain {
         this.leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+
+    public DriveTrain(HardwareMap hardwareMap,
+                      DcMotorConfig leftFront, DcMotorConfig leftRear,
+                      DcMotorConfig rightFront, DcMotorConfig rightRear) {
+        this(hardwareMap,
+                leftFront.getHardwareName(),
+                leftRear.getHardwareName(),
+                rightFront.getHardwareName(),
+                rightRear.getHardwareName());
     }
 
     /**
@@ -166,13 +178,15 @@ public class DriveTrain {
     /**
      * Configure odometry (GoBILDA Pinpoint) and, if available, install Pedro's Pinpoint localizer into follower.
      */
-    public void configureOdometry(String deviceName,
-                                  double xPodOffsetMm,
-                                  double yPodOffsetMm,
-                                  boolean forwardEncoderForward,
-                                  boolean strafeEncoderForward,
-                                  boolean useFourBarPod) {
-        odometry.configure(deviceName, xPodOffsetMm, yPodOffsetMm, forwardEncoderForward, strafeEncoderForward, useFourBarPod);
+    public void configureOdometry(OdometryConfig config) { // Signature changed
+        odometry.configure(
+                config.getDeviceName(),
+                config.getXOffsetMm(),
+                config.getYOffsetMm(),
+                config.isForwardEncoderForward(),
+                config.isStrafeEncoderForward(),
+                config.isUseFourBarPod()
+        );
         Object pedroLoc = odometry.getPedroLocalizer();
         if (pedroLoc != null) {
             try {
@@ -180,14 +194,19 @@ public class DriveTrain {
                 try {
                     poseTracker.getClass().getMethod("setLocalizer", pedroLoc.getClass()).invoke(poseTracker, pedroLoc);
                 } catch (NoSuchMethodException e) {
+                    // Try with interfaces if direct method not found
                     for (Class<?> iface : pedroLoc.getClass().getInterfaces()) {
                         try {
                             poseTracker.getClass().getMethod("setLocalizer", iface).invoke(poseTracker, pedroLoc);
-                            break;
-                        } catch (Exception ignored) {}
+                            break; // Found and invoked
+                        } catch (Exception ignored) {
+                            // Continue trying other interfaces
+                        }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                // Ignore if localizer cannot be set
+            }
         }
     }
 
@@ -204,5 +223,3 @@ public class DriveTrain {
     public DcMotorEx getRightFront() { return rightFront; }
     public DcMotorEx getRightRear() { return rightRear; }
 }
-
-
