@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.TuningConfig;
 import org.firstinspires.ftc.teamcode.Autos.commands.*;
+import org.firstinspires.ftc.teamcode.config.OdometryConfig; // Added import
 import org.firstinspires.ftc.teamcode.pedroPathing.PanelsHelper;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
@@ -20,14 +21,8 @@ public class SquareAuto extends LinearOpMode {
         Robot robot = new Robot(hardwareMap, LF, LR, RF, RR);
 
         try {
-            robot.configureOdometry(
-                    TuningConfig.PINPOINT_DEVICE_NAME,
-                    TuningConfig.PINPOINT_X_OFFSET_MM,
-                    TuningConfig.PINPOINT_Y_OFFSET_MM,
-                    TuningConfig.PINPOINT_FORWARD_ENCODER_FORWARD,
-                    TuningConfig.PINPOINT_STRAFE_ENCODER_FORWARD,
-                    TuningConfig.PINPOINT_USE_FOUR_BAR_POD
-            );
+            // Updated to use OdometryConfig.PINPOINT
+            robot.configureOdometry(OdometryConfig.PINPOINT);
         } catch (Exception ignored) {}
 
         double d = TuningConfig.AUTO_SQUARE_SIDE_INCHES;
@@ -53,5 +48,4 @@ public class SquareAuto extends LinearOpMode {
         square.end(robot);
     }
 }
-
 
