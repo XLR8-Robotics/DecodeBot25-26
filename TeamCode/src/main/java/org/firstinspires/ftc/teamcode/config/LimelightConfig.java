@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.config;
 
 public enum LimelightConfig {
-    LIMELIGHT_DEFAULT("limelight");
+    LIMELIGHT_DEFAULT("limelight-xlr");
 
     private final String hardwareName;
 
