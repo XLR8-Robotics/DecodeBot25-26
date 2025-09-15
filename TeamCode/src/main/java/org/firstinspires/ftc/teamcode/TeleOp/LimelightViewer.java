@@ -14,8 +14,6 @@ import java.util.Locale;
 public class LimelightViewer extends OpMode {
     private Robot robot;
 
-    // String constants for motor names removed
-
     @Override
     public void init() {
         // Updated to use DcMotorConfig and LimelightConfig enums
