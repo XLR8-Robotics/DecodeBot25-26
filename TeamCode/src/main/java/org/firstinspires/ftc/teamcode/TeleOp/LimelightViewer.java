@@ -7,6 +7,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.config.DcMotorConfig; // Added import
 import org.firstinspires.ftc.teamcode.config.LimelightConfig; // Added import
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
+import org.firstinspires.ftc.teamcode.utils.PatternIdentifier; // Added for pattern identification
 
 import java.util.Locale;
 
@@ -36,7 +37,14 @@ public class LimelightViewer extends OpMode {
         assert robot != null;
         telemetry.addData("Has Targets", robot.getLimelight().hasTargets());
         telemetry.addData("Best Tag", robot.getLimelight().getBestTagName());
-        telemetry.addData("Tag ID", robot.getLimelight().getBestTagId());
+        
+        int tagId = robot.getLimelight().getBestTagId();
+        telemetry.addData("Tag ID", tagId);
+
+        // Get and display the pattern description based on the Tag ID
+        String patternDescription = PatternIdentifier.getPatternDescription(tagId);
+        telemetry.addData("Detected Pattern", patternDescription);
+
         telemetry.addData("tx", String.format(Locale.US, "%.2f", robot.getLimelight().getTx()));
         telemetry.addData("ty", String.format(Locale.US, "%.2f", robot.getLimelight().getTy()));
         

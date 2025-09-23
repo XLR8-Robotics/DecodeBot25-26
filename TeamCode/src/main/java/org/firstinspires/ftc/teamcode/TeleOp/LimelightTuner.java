@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.config.LimelightConfig;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+import org.firstinspires.ftc.teamcode.utils.PatternIdentifier; // Added for pattern identification
 
 import java.util.Locale;
 
@@ -30,7 +31,13 @@ public class LimelightTuner extends OpMode {
         limelight.updateResult(); // Fetch the latest data from Limelight
 
         telemetryM.debug("Has Targets: " + limelight.hasTargets());
-        telemetryM.debug("Best Tag ID: " + limelight.getBestTagId());
+        int tagId = limelight.getBestTagId();
+        telemetryM.debug("Best Tag ID: " + tagId);
+        
+        // Get and display the pattern description based on the Tag ID
+        String patternDescription = PatternIdentifier.getPatternDescription(tagId);
+        telemetryM.debug("Detected Pattern: " + patternDescription);
+
         telemetryM.debug("Best Tag Name: " + limelight.getBestTagName());
         telemetryM.debug("tx: " + String.format(Locale.US, "%.2f", limelight.getTx()));
         telemetryM.debug("ty: " + String.format(Locale.US, "%.2f", limelight.getTy()));
