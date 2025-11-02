@@ -1,74 +1,62 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
-
-import org.firstinspires.ftc.teamcode.TuningConfig;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**
- * Centralized, configurable mapping for DRIVETRAIN controls only.
- * Change your TeleOp drive scheme here in one place.
+ * Subsystem for controlling the shooter mechanism, including the shooter wheel and hood.
  */
 public class Shooter {
-    public enum Action {
-        DRIVE_PRECISION,
+    private final DcMotorEx shooterMotor;
+    private final Servo hoodServo;
+
+    public Shooter(HardwareMap hardwareMap, String shooterMotorName, String hoodServoName) {
+        this.shooterMotor = hardwareMap.get(DcMotorEx.class, shooterMotorName);
+        this.hoodServo = hardwareMap.get(Servo.class, hoodServoName);
+
+        // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
+        // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);
     }
 
-    public enum Analog {
-        DRIVE_FORWARD,
-        DRIVE_STRAFE,
-        DRIVE_TURN,
+    /**
+     * Call this method in your TeleOp loop to control the shooter with the gamepad.
+     * @param gamepad The gamepad that will control the shooter.
+     */
+    public void update(Gamepad gamepad) {
+        // --- Shooter Motor Control ---
+        if (gamepad.x) {
+            shooterMotor.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
+        } else {
+            shooterMotor.setPower(0);
+        }
+
+        // --- Hood Servo Control ---
+        if (gamepad.dpad_up) {
+            hoodServo.setPosition(Constants.ShooterConfig.HOOD_UP_POSITION);
+        } else if (gamepad.dpad_down) {
+            hoodServo.setPosition(Constants.ShooterConfig.HOOD_DOWN_POSITION);
+        } else {
+            hoodServo.setPosition(Constants.ShooterConfig.HOOD_DEFAULT_POSITION);
+        }
     }
 
-    public interface BoolSource { boolean get(Gamepad gp); }
-    public interface AnalogSource { double get(Gamepad gp); }
-
-    private final Map<Action, BoolSource> boolBindings = new HashMap<>();
-    private final Map<Analog, AnalogSource> analogBindings = new HashMap<>();
-
-    private double analogDeadband = TuningConfig.ANALOG_DEADBAND;
-
-    public Shooter() {
-        setDefaultBindings();
+    /**
+     * Returns the current power of the shooter motor. Useful for telemetry.
+     * @return The current power of the shooter motor.
+     */
+    public double getMotorPower() {
+        return shooterMotor.getPower();
     }
 
-    public void setAnalogDeadband(double db) { this.analogDeadband = db; }
-
-    public Shooter bind(Action action, BoolSource source) {
-        boolBindings.put(action, source);
-        return this;
-    }
-
-    public Shooter bind(Analog analog, AnalogSource source) {
-        analogBindings.put(analog, source);
-        return this;
-    }
-
-    public void setDefaultBindings() {
-        // Buttons
-        bind(Action.DRIVE_PRECISION, gp -> gp.left_bumper);
-
-        // Axes
-        bind(Analog.DRIVE_FORWARD, gp -> applyDeadband(-gp.left_stick_y));
-        bind(Analog.DRIVE_STRAFE, gp -> applyDeadband(-gp.left_stick_x));
-        bind(Analog.DRIVE_TURN, gp -> applyDeadband(-gp.right_stick_x));
-    }
-
-    public boolean get(Action action, Gamepad gp) {
-        BoolSource src = boolBindings.get(action);
-        return src != null && src.get(gp);
-    }
-
-    public double get(Analog analog, Gamepad gp) {
-        AnalogSource src = analogBindings.get(analog);
-        return src != null ? src.get(gp) : 0.0;
-    }
-
-    private double applyDeadband(double v) {
-        return Math.abs(v) < analogDeadband ? 0.0 : v;
+    /**
+     * Returns the current position of the hood servo. Useful for telemetry.
+     * @return The current position of the hood servo.
+     */
+    public double getServoPosition() {
+        return hoodServo.getPosition();
     }
 }
-
-

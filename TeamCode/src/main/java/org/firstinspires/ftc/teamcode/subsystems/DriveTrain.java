@@ -1,225 +1,75 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathChain;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Gamepad;
-
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.config.DcMotorConfig;
-import org.firstinspires.ftc.teamcode.config.OdometryConfig; // Added import
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**
- * DriveTrain subsystem that wraps Pedro Pathing's Follower.
- *
- * This class centralizes robot motion control for both TeleOp (manual drive)
- * and Autonomous (path following). It is designed to be extended with
- * GoBILDA Pinpoint odometry integration by configuring the Follower's
- * localizer from elsewhere when the device and constants are available.
+ * Subsystem for controlling the robot's drivetrain.
  */
-public class DriveTrain {
-    private final Follower follower;
-    private final Odometry odometry;
-    private Controls controls;
-
-    // Drive motors
+public class Drivetrain {
     private final DcMotorEx leftFront;
-    private final DcMotorEx leftRear;
     private final DcMotorEx rightFront;
+    private final DcMotorEx leftRear;
     private final DcMotorEx rightRear;
 
-    public DriveTrain(HardwareMap hardwareMap, String leftFrontName, String leftRearName, String rightFrontName, String rightRearName) {
+    public Drivetrain(HardwareMap hardwareMap) {
+        // Initialize motors from the hardware map using names from the Constants file
+        leftFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_LEFT_FRONT);
+        rightFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_RIGHT_FRONT);
+        leftRear = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_LEFT_REAR);
+        rightRear = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_RIGHT_REAR);
 
-        this.follower = Constants.createFollower(hardwareMap);
-        this.odometry = new Odometry(hardwareMap);
-
-        this.leftFront = hardwareMap.get(DcMotorEx.class, leftFrontName);
-        this.leftRear = hardwareMap.get(DcMotorEx.class, leftRearName);
-        this.rightFront = hardwareMap.get(DcMotorEx.class, rightFrontName);
-        this.rightRear = hardwareMap.get(DcMotorEx.class, rightRearName);
-
-        // Common FTC conventions: reverse right side for mecanum/tank
-        this.rightFront.setDirection(DcMotor.Direction.REVERSE);
-        this.rightRear.setDirection(DcMotor.Direction.REVERSE);
-
-        // Safer stopping behavior
-        this.leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        this.leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        this.rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        this.rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    }
-
-    public DriveTrain(HardwareMap hardwareMap,
-                      DcMotorConfig leftFront, DcMotorConfig leftRear,
-                      DcMotorConfig rightFront, DcMotorConfig rightRear) {
-        this(hardwareMap,
-                leftFront.getHardwareName(),
-                leftRear.getHardwareName(),
-                rightFront.getHardwareName(),
-                rightRear.getHardwareName());
+        // Reverse the right-side motors for mecanum drive
+        // You may need to change this depending on your robot's motor orientation
+        rightFront.setDirection(DcMotor.Direction.REVERSE);
+        rightRear.setDirection(DcMotor.Direction.REVERSE);
     }
 
     /**
-     * Starts TeleOp driving mode inside Pedro's follower.
-     * Use together with drive() calls each loop, followed by update().
+     * Controls the drivetrain using mecanum drive kinematics from joystick inputs.
+     * @param forward The forward/backward input (typically from a y-axis joystick)
+     * @param strafe The strafing input (typically from an x-axis joystick)
+     * @param turn The turning input (typically from another x-axis joystick)
      */
-    public void startTeleOpDrive() {
-        follower.startTeleopDrive(true);
-    }
+    public void manualDrive(double forward, double strafe, double turn) {
+        // Mecanum drive kinematics
+        double leftFrontPower = forward + strafe + turn;
+        double rightFrontPower = forward - strafe - turn;
+        double leftRearPower = forward - strafe + turn;
+        double rightRearPower = forward + strafe - turn;
 
-    /**
-     * Attach a Controls instance to have DriveTrain read mappings directly each loop.
-     */
-    public void setControls(Controls controls) {
-        this.controls = controls;
-    }
+        // Normalize the motor powers to ensure they are within the -1.0 to 1.0 range
+        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftRearPower));
+        max = Math.max(max, Math.abs(rightRearPower));
 
-    /**
-     * Manual drive helper for TeleOp.
-     * @param forward forward/backward command (+forward)
-     * @param strafe left/right command (+right)
-     * @param turn ccw/cw turn command (+ccw)
-     */
-    public void drive(double forward, double strafe, double turn) {
-        follower.setTeleOpDrive(forward, strafe, turn, true);
-    }
-
-    /**
-     * Sets the follower's starting pose. Useful before autonomous or TeleOp.
-     */
-    public void setStartingPose(Pose startingPose) {
-        follower.setStartingPose(startingPose);
-    }
-
-    /**
-     * Follow a single Path.
-     */
-    public void followPath(Path path) {
-        follower.followPath(path);
-    }
-
-    /**
-     * Follow a PathChain.
-     */
-    public void followPath(PathChain chain) {
-        follower.followPath(chain);
-    }
-
-    /**
-     * @return true if follower is actively executing a path.
-     */
-    public boolean isBusy() {
-        return follower.isBusy();
-    }
-
-    /**
-     * Must be called every loop to update pathing/localization and output to motors.
-     */
-    public void update() {
-        // Keep odometry fresh even if follower doesn't call into it
-        odometry.update();
-        follower.update();
-    }
-
-    /**
-     * Convenience helper for TeleOp: reads Controls and commands follower.
-     */
-    public void teleop(Gamepad gamepad1, double normalScale, double slowScale) {
-        if (controls == null) return;
-        boolean precision = controls.get(Controls.Action.DRIVE_PRECISION, gamepad1);
-        double scale = precision ? slowScale : normalScale;
-
-        double forward = scale * controls.get(Controls.Analog.DRIVE_FORWARD, gamepad1);
-        double strafe = scale * controls.get(Controls.Analog.DRIVE_STRAFE, gamepad1);
-        double turn = scale * controls.get(Controls.Analog.DRIVE_TURN, gamepad1);
-
-        drive(forward, strafe, turn);
-        update();
-    }
-
-    /**
-     * Emergency stop for TeleOp drive context.
-     */
-    public void stop() {
-        follower.startTeleopDrive(true);
-        follower.setTeleOpDrive(0, 0, 0, true);
-    }
-
-    /**
-     * Access to the underlying follower for advanced usage (builders, tuning, etc.).
-     */
-    public Follower getFollower() {
-        return follower;
-    }
-
-    /**
-     * Returns current estimated pose from the follower.
-     */
-    public Pose getPose() {
-        return follower.getPose();
-    }
-
-    /**
-     * Optional: Configure a Pinpoint-based localizer on the follower's pose tracker.
-     * Implement wiring where you construct a Pinpoint localizer and set it here.
-     * Left intentionally generic to keep compile safety until the exact localizer
-     * class and constants are provided.
-     */
-    public void configurePinpointLocalizer(Object pinpointLocalizer) {
-        // Example (pseudo): follower.getPoseTracker().setLocalizer(pinpointLocalizer);
-        // Intentionally not referencing external classes to keep this compile-safe.
-        // Cast and apply when your Pinpoint localizer class is available in the project.
-    }
-
-    /**
-     * Configure odometry (GoBILDA Pinpoint) and, if available, install Pedro's Pinpoint localizer into follower.
-     */
-    public void configureOdometry(OdometryConfig config) { // Signature changed
-        odometry.configure(
-                config.getDeviceName(),
-                config.getXOffsetMm(),
-                config.getYOffsetMm(),
-                config.isForwardEncoderForward(),
-                config.isStrafeEncoderForward(),
-                config.isUseFourBarPod()
-        );
-        Object pedroLoc = odometry.getPedroLocalizer();
-        if (pedroLoc != null) {
-            try {
-                Object poseTracker = follower.getPoseTracker();
-                try {
-                    poseTracker.getClass().getMethod("setLocalizer", pedroLoc.getClass()).invoke(poseTracker, pedroLoc);
-                } catch (NoSuchMethodException e) {
-                    // Try with interfaces if direct method not found
-                    for (Class<?> iface : pedroLoc.getClass().getInterfaces()) {
-                        try {
-                            poseTracker.getClass().getMethod("setLocalizer", iface).invoke(poseTracker, pedroLoc);
-                            break; // Found and invoked
-                        } catch (Exception ignored) {
-                            // Continue trying other interfaces
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-                // Ignore if localizer cannot be set
-            }
+        if (max > 1.0) {
+            leftFrontPower /= max;
+            rightFrontPower /= max;
+            leftRearPower /= max;
+            rightRearPower /= max;
         }
+
+        setMotorPowers(leftFrontPower, rightFrontPower, leftRearPower, rightRearPower);
     }
 
-    // Basic tank-style power setter (values in [-1, 1])
-    public void setMotorPowers(double lf, double lr, double rf, double rr) {
-        leftFront.setPower(lf);
-        leftRear.setPower(lr);
-        rightFront.setPower(rf);
-        rightRear.setPower(rr);
+    /**
+     * Sets the power for each of the four drivetrain motors directly.
+     */
+    private void setMotorPowers(double lfPower, double rfPower, double lrPower, double rrPower) {
+        leftFront.setPower(lfPower);
+        rightFront.setPower(rfPower);
+        leftRear.setPower(lrPower);
+        rightRear.setPower(rrPower);
     }
 
-    public DcMotorEx getLeftFront() { return leftFront; }
-    public DcMotorEx getLeftRear() { return leftRear; }
-    public DcMotorEx getRightFront() { return rightFront; }
-    public DcMotorEx getRightRear() { return rightRear; }
+    /**
+     * Returns the current power of all four drivetrain motors.
+     * @return An array of motor powers: [leftFront, rightFront, leftRear, rightRear]
+     */
+    public double[] getMotorPowers(){
+        return new double[]{leftFront.getPower(), rightFront.getPower(), leftRear.getPower(), rightRear.getPower()};
+    }
 }
