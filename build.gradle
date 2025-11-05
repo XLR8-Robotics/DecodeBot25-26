@@ -24,11 +24,12 @@ allprojects {
     }
 }
 
+
 // Prefer Java 17 toolchain for Gradle tasks where applicable
-gradle.projectsEvaluated {
-    subprojects { p ->
-        if (p.plugins.hasPlugin('java')) {
-            p.extensions.configure(JavaPluginExtension) {
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin('java')) {
+            project.java {
                 toolchain {
                     languageVersion = JavaLanguageVersion.of(17)
                 }
@@ -36,6 +37,7 @@ gradle.projectsEvaluated {
         }
     }
 }
+
 
 repositories {
     mavenCentral()
