@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**
@@ -11,9 +13,11 @@ import org.firstinspires.ftc.teamcode.config.Constants;
  */
 public class Turret {
     private final DcMotorEx turretMotor;
+    private final Servo shooterBlocker;
 
-    public Turret(HardwareMap hardwareMap, String turretMotorName) {
-        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
+    public Turret(HardwareMap hardwareMap) {
+        this.turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
+        this.shooterBlocker = hardwareMap.get(Servo.class, Constants.HardwareConfig.SHOOTER_BLOCKER);
 
         // If the turret rotates in the wrong direction, you can reverse it by uncommenting the next line.
         // this.turretMotor.setDirection(DcMotor.Direction.REVERSE);

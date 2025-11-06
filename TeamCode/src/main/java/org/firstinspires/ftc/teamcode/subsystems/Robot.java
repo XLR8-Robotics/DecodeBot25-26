@@ -22,8 +22,9 @@ public class Robot {
     public void init(HardwareMap hardwareMap) {
         // Initialize all subsystems here using names from the Constants file
         drivetrain = new Drivetrain(hardwareMap);
-        turret = new Turret(hardwareMap, Constants.HardwareConfig.TURRET_MOTOR);
-        intake = new Intake(hardwareMap, Constants.HardwareConfig.INTAKE_MOTOR);
+        turret = new Turret(hardwareMap);
+
+        intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap, Constants.HardwareConfig.SHOOTER_MOTOR, Constants.HardwareConfig.HOOD_SERVO);
         limelight = new Limelight(hardwareMap, Constants.HardwareConfig.LIMELIGHT_NAME);
 

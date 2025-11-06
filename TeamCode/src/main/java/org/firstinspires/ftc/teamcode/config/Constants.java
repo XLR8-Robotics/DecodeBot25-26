@@ -20,6 +20,7 @@ public class Constants {
 
         // Subsystem Motors & Servos
         public static final String TURRET_MOTOR = "turretMotor";
+        public static final String SHOOTER_BLOCKER = "shooterBlocker";
         public static final String INTAKE_MOTOR = "intakeMotor";
         public static final String SHOOTER_MOTOR = "shooterMotor";
         public static final String HOOD_SERVO = "hoodServo";
