@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Robot {
 
     // Declare all subsystems here
-    public Drivetrain drivetrain;
+    public DriveTrain drivetrain;
     public Turret turret;
     public Intake intake;
     public Shooter shooter;
@@ -21,16 +21,10 @@ public class Robot {
      */
     public void init(HardwareMap hardwareMap) {
         // Initialize all subsystems here using names from the Constants file
-        drivetrain = new Drivetrain(hardwareMap);
-        turret = new Turret(hardwareMap, Constants.HardwareConfig.TURRET_MOTOR);
-        intake = new Intake(hardwareMap, Constants.HardwareConfig.INTAKE_MOTOR);
-        shooter = new Shooter(hardwareMap, Constants.HardwareConfig.SHOOTER_MOTOR, Constants.HardwareConfig.HOOD_SERVO);
-        limelight = new Limelight(hardwareMap, Constants.HardwareConfig.LIMELIGHT_NAME);
+        drivetrain = new DriveTrain(hardwareMap);
+        turret = new Turret(hardwareMap);
+        intake = new Intake(hardwareMap);
+        shooter = new Shooter(hardwareMap);
 
     }
-
-    // You can add an "update" method here to update all subsystems with one call
-    // public void update() {
-    //     turret.update(); // This would need to be adjusted if update needs parameters
-    // }
 }

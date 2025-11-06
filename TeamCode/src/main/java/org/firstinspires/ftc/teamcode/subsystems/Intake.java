@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**
@@ -11,9 +13,11 @@ import org.firstinspires.ftc.teamcode.config.Constants;
  */
 public class Intake {
     private final DcMotorEx intakeMotor;
+    private Servo liftServo;
 
-    public Intake(HardwareMap hardwareMap, String intakeMotorName) {
-        this.intakeMotor = hardwareMap.get(DcMotorEx.class, intakeMotorName);
+    public Intake(HardwareMap hardwareMap) {
+        //this.liftServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.LIFT_SERVO);
+        this.intakeMotor = hardwareMap.get(DcMotorEx.class,  Constants.HardwareConfig.INTAKE_MOTOR);
 
         // If the intake runs in the wrong direction, you can reverse it by uncommenting the next line.
         // this.intakeMotor.setDirection(DcMotor.Direction.REVERSE);
