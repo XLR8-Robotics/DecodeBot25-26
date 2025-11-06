@@ -1,22 +1,20 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.Const;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
-/**
- * Subsystem for controlling the shooter mechanism, including the shooter wheel and hood.
- */
 public class Shooter {
     private final DcMotorEx shooterMotor;
     private final Servo hoodServo;
 
-    public Shooter(HardwareMap hardwareMap, String shooterMotorName, String hoodServoName) {
-        this.shooterMotor = hardwareMap.get(DcMotorEx.class, shooterMotorName);
-        this.hoodServo = hardwareMap.get(Servo.class, hoodServoName);
+    public Shooter(HardwareMap hardwareMap) {
+        this.shooterMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.SHOOTER_MOTOR);
+        this.hoodServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.HOOD_SERVO);
 
         // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
         // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);

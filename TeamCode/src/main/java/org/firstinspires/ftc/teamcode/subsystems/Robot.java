@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Robot {
 
     // Declare all subsystems here
-    public Drivetrain drivetrain;
+    public DriveTrain drivetrain;
     public Turret turret;
     public Intake intake;
     public Shooter shooter;
@@ -20,13 +20,11 @@ public class Robot {
      * @param hardwareMap The hardware map from the OpMode.
      */
     public void init(HardwareMap hardwareMap) {
-        // Initialize all subsystems here using names from the Constants file
-        drivetrain = new Drivetrain(hardwareMap);
+        drivetrain = new DriveTrain(hardwareMap);
         turret = new Turret(hardwareMap);
-
         intake = new Intake(hardwareMap);
-        shooter = new Shooter(hardwareMap, Constants.HardwareConfig.SHOOTER_MOTOR, Constants.HardwareConfig.HOOD_SERVO);
-        limelight = new Limelight(hardwareMap, Constants.HardwareConfig.LIMELIGHT_NAME);
+        shooter = new Shooter(hardwareMap);
+        limelight = new Limelight(hardwareMap);
 
     }
 
