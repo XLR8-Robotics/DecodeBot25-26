@@ -8,7 +8,7 @@ public class Limelight {
     private final double cameraHeight;
     private final double cameraAngle;
 
-    public Limelight(HardwareMap hardwareMap) {
+    public Limelight(HardwareMap hardwareMap, String limelightName) {
         // Initialization logic for the Limelight
         // e.g., webcam = hardwareMap.get(WebcamName.class, limelightName);
 

@@ -12,8 +12,8 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Turret {
     private final DcMotorEx turretMotor;
 
-    public Turret(HardwareMap hardwareMap) {
-        this.turretMotor = hardwareMap.get(DcMotorEx.class,  Constants.HardwareConfig.TURRET_MOTOR);
+    public Turret(HardwareMap hardwareMap, String turretMotorName) {
+        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
 
         // If the turret rotates in the wrong direction, you can reverse it by uncommenting the next line.
         // this.turretMotor.setDirection(DcMotor.Direction.REVERSE);

@@ -24,8 +24,7 @@ public class Constants {
         public static final String SHOOTER_MOTOR = "shooterMotor";
         public static final String HOOD_SERVO = "hoodServo";
         public static final String LIMELIGHT_NAME = "limelight";
-        public static final String LIFT_SERVO = "liftServo";
-        public static final String STOPER_SERVO = "stoperServo";
+
         // Odometry Pods
         public static final String LEFT_ENCODER = "left_encoder";
         public static final String RIGHT_ENCODER = "right_encoder";
@@ -56,10 +55,9 @@ public class Constants {
         public static final double SHOOTER_SPEED = 0.9;
 
         // Servo positions for the shooter hood (0.0 to 1.0)
-        public static final double HOOD_DEFAULT_POSITION = 0.28;
-        public static final double HOOD_UP_POSITION = 0.61;
-        public static final double HOOD_DOWN_POSITION = 0.35;
-        public static final double HOOD_MIDDLE_POSITION = 0.75;
+        public static final double HOOD_DEFAULT_POSITION = 0.5;
+        public static final double HOOD_UP_POSITION = 0.75;
+        public static final double HOOD_DOWN_POSITION = 0.25;
     }
 
     /**

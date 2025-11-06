@@ -5,13 +5,16 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
-public class DriveTrain {
+/**
+ * Subsystem for controlling the robot's drivetrain.
+ */
+public class Drivetrain {
     private final DcMotorEx leftFront;
     private final DcMotorEx rightFront;
     private final DcMotorEx leftRear;
     private final DcMotorEx rightRear;
 
-    public DriveTrain(HardwareMap hardwareMap) {
+    public Drivetrain(HardwareMap hardwareMap) {
         // Initialize motors from the hardware map using names from the Constants file
         leftFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_LEFT_FRONT);
         rightFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_RIGHT_FRONT);
