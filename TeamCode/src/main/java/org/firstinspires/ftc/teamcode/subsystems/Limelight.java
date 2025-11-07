@@ -8,11 +8,12 @@ public class Limelight {
     private final double cameraHeight;
     private final double cameraAngle;
 
-    public Limelight(HardwareMap hardwareMap, String limelightName) {
+    public Limelight(HardwareMap hardwareMap) {
         // Initialization logic for the Limelight
         // e.g., webcam = hardwareMap.get(WebcamName.class, limelightName);
 
         // Store the physical constants from the config file
+
         this.cameraHeight = Constants.LimelightConfig.LIMELIGHT_HEIGHT;
         this.cameraAngle = Constants.LimelightConfig.LIMELIGHT_ANGLE;
     }

@@ -8,13 +8,13 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 /**
  * Subsystem for controlling the robot's drivetrain.
  */
-public class Drivetrain {
+public class DriveTrain {
     private final DcMotorEx leftFront;
     private final DcMotorEx rightFront;
     private final DcMotorEx leftRear;
     private final DcMotorEx rightRear;
 
-    public Drivetrain(HardwareMap hardwareMap) {
+    public DriveTrain(HardwareMap hardwareMap) {
         // Initialize motors from the hardware map using names from the Constants file
         leftFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_LEFT_FRONT);
         rightFront = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.DRIVE_MOTOR_RIGHT_FRONT);
