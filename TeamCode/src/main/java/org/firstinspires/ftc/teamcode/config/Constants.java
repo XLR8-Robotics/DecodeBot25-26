@@ -22,9 +22,11 @@ public class Constants {
         public static final String TURRET_MOTOR = "turretMotor";
         public static final String SHOOTER_BLOCKER = "shooterBlocker";
         public static final String INTAKE_MOTOR = "intakeMotor";
+        public static final String LIFT_SERVO = "liftServo";
         public static final String SHOOTER_MOTOR = "shooterMotor";
         public static final String HOOD_SERVO = "hoodServo";
         public static final String LIMELIGHT_NAME = "limelight";
+        public static final String PINPOINT_DEVICE_NAME = "pinpoint"; // REQUIRED if using Pinpoint
 
         // Odometry Pods
         public static final String LEFT_ENCODER = "left_encoder";
@@ -38,6 +40,9 @@ public class Constants {
     public static class TurretConfig {
         // Speed for turret rotation (0.0 to 1.0)
         public static final double TURRET_SPEED = 0.6;
+        // Servo positions for shooterBlocker Servo
+        public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.0;
+        public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.45;
     }
 
     /**
@@ -46,6 +51,9 @@ public class Constants {
     public static class IntakeConfig {
         // Speed for the intake motor (0.0 to 1.0)
         public static final double INTAKE_SPEED = 0.8;
+        public static final double LIFT_SERVO_NOT_LIFTING_POSITION = 0.0;
+        public static final double LIFT_SERVO_LIFTING_POSITION = 0.65;
+
     }
 
     /**
@@ -54,7 +62,7 @@ public class Constants {
     public static class ShooterConfig {
         // Speed for the shooter wheel (0.0 to 1.0)
         public static final double SHOOTER_SPEED = 0.9;
-
+        //SERVOs
         // Servo positions for the shooter hood (0.0 to 1.0)
         public static final double HOOD_DEFAULT_POSITION = 0.5;
         public static final double HOOD_UP_POSITION = 0.75;

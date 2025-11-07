@@ -45,6 +45,9 @@ public class ManualControlTeleOp extends LinearOpMode {
             telemetry.addData("Intake Power", "%.2f", robot.intake.getMotorPower());
             telemetry.addData("Shooter Power", "%.2f", robot.shooter.getMotorPower());
             telemetry.addData("Hood Position", "%.2f", robot.shooter.getServoPosition());
+            telemetry.addData("Lift Servo Position", "%.2f", robot.intake.getLiftServoPosition());
+            telemetry.addData("Shooter Stopper Position", "%.2f", robot.turret.getShooterBlockerPosition());
+            telemetry.addData("Shooter is Running", robot.shooter.isRunning());
             telemetry.update();
         }
     }

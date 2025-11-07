@@ -5,7 +5,7 @@ package org.firstinspires.ftc.teamcode.config;
  * Start with GoBILDA Pinpoint as an example; extend if needed.
  */
 public enum OdometryConfig {
-    PINPOINT("pinpoint", -84.0, -168.0, true, true, true);
+    PINPOINT(Constants.HardwareConfig.PINPOINT_DEVICE_NAME, -84.0, -168.0, true, true, true);
 
     private final String deviceName;
     private final double xOffsetMm;

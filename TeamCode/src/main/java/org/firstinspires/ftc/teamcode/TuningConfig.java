@@ -23,7 +23,6 @@ public final class TuningConfig {
     // Odometry (Pinpoint)
     // =============================
     // Offsets are in millimeters: x = left(+)/right(-) of center, y = forward(+)/back(-) of center
-    public static final String PINPOINT_DEVICE_NAME = "pinpoint"; // REQUIRED if using Pinpoint
     public static final double PINPOINT_X_OFFSET_MM = -84.0; // EDIT
     public static final double PINPOINT_Y_OFFSET_MM = -168.0; // EDIT
     public static final boolean PINPOINT_FORWARD_ENCODER_FORWARD = true; // EDIT

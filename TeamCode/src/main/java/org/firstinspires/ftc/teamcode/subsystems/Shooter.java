@@ -13,10 +13,12 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Shooter {
     private final DcMotorEx shooterMotor;
     private final Servo hoodServo;
+    private boolean isRunning;
 
     public Shooter(HardwareMap hardwareMap, String shooterMotorName, String hoodServoName) {
         this.shooterMotor = hardwareMap.get(DcMotorEx.class, shooterMotorName);
         this.hoodServo = hardwareMap.get(Servo.class, hoodServoName);
+        this.isRunning = false;
 
         // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
         // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -28,10 +30,12 @@ public class Shooter {
      */
     public void update(Gamepad gamepad) {
         // --- Shooter Motor Control ---
-        if (gamepad.x) {
+        if (gamepad.cross) {
             shooterMotor.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
+            isRunning = true;
         } else {
             shooterMotor.setPower(0);
+            isRunning = false;
         }
 
         // --- Hood Servo Control ---
@@ -58,5 +62,8 @@ public class Shooter {
      */
     public double getServoPosition() {
         return hoodServo.getPosition();
+    }
+
+    public boolean isRunning() {return isRunning;
     }
 }

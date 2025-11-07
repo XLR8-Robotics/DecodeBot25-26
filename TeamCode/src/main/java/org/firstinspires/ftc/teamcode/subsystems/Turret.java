@@ -15,6 +15,9 @@ public class Turret {
     private final DcMotorEx turretMotor;
     private final Servo shooterBlocker;
 
+    private boolean isBlocking = false;
+    private boolean previousSquareButtonState = false;
+
     public Turret(HardwareMap hardwareMap) {
         this.turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
         this.shooterBlocker = hardwareMap.get(Servo.class, Constants.HardwareConfig.SHOOTER_BLOCKER);
@@ -39,6 +42,17 @@ public class Turret {
         }
 
         turretMotor.setPower(turretPower);
+
+        boolean currentSquareButtonState = gamepad.square;
+        if (currentSquareButtonState && !previousSquareButtonState) {
+            isBlocking = !isBlocking;
+            if (isBlocking) {
+                shooterBlocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+            } else {
+                shooterBlocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+            }
+        }
+        previousSquareButtonState = currentSquareButtonState;
     }
 
     /**
@@ -48,4 +62,5 @@ public class Turret {
     public double getMotorPower() {
         return turretMotor.getPower();
     }
+    public double getShooterBlockerPosition() {return shooterBlocker.getPosition();}
 }
