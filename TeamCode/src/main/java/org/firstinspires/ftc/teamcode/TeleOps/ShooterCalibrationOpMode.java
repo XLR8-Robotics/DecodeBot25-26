@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-@TeleOp(name = "Shooter Calibration (Final)", group = "Calibration")
+@TeleOp(name = "Shooter Calibration (Final)", group = "Tuning")
 public class ShooterCalibrationOpMode extends LinearOpMode {
 
     private Robot robot;

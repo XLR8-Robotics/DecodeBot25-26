@@ -65,7 +65,7 @@ public class MainTeleOps {
         }
     }
 
-    @TeleOp(name = "Main TeleOp Red", group = "TeleOp")
+    @TeleOp(name = "RED SIDE!!!! Main TeleOp", group = "Game")
     public static class MainTeleopRed extends MainTeleopShared {
 
         @Override
@@ -74,7 +74,7 @@ public class MainTeleOps {
         }
     }
 
-    @TeleOp(name = "Main TeleOp Blue", group = "TeleOp")
+    @TeleOp(name = "BLUE SIDE!!!! Main TeleOp", group = "Game")
     public static class MainTeleopBlue extends MainTeleopShared {
 
         @Override

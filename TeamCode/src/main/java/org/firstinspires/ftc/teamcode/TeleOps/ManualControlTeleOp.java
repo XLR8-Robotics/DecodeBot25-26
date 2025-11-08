@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
-@TeleOp(name = "Manual Control", group = "TeleOp")
+@TeleOp(name = "Manual Control", group = "Game")
 public class ManualControlTeleOp extends LinearOpMode {
 
     private Robot robot;
@@ -33,6 +33,7 @@ public class ManualControlTeleOp extends LinearOpMode {
             // Subsystem Control
             robot.intake.update(gamepad1);
             robot.shooter.update(gamepad1);
+            robot.turret.update(gamepad1);
 
             // --- Telemetry ---
             displayTelemetry();

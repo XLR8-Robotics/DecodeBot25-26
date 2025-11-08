@@ -13,10 +13,10 @@ public class Constants {
      */
     public static class HardwareConfig {
         // Drivetrain Motors
-        public static final String DRIVE_MOTOR_LEFT_FRONT = "leftFrontMotor";
-        public static final String DRIVE_MOTOR_RIGHT_FRONT = "rightFrontMotor";
-        public static final String DRIVE_MOTOR_LEFT_REAR = "leftRearMotor";
-        public static final String DRIVE_MOTOR_RIGHT_REAR = "rightRearMotor";
+        public static final String DRIVE_MOTOR_LEFT_FRONT = "leftFront";
+        public static final String DRIVE_MOTOR_RIGHT_FRONT = "rightFront";
+        public static final String DRIVE_MOTOR_LEFT_REAR = "leftRear";
+        public static final String DRIVE_MOTOR_RIGHT_REAR = "rightRear";
 
         // Subsystem Motors & Servos
         public static final String TURRET_MOTOR = "turretMotor";
@@ -29,10 +29,10 @@ public class Constants {
         public static final String PINPOINT_DEVICE_NAME = "pinpoint"; // REQUIRED if using Pinpoint
 
         // Sensors
-        public static final String TURRET_LIMIT_LEFT = "turret_limit_left";
-        public static final String TURRET_LIMIT_RIGHT = "turret_limit_right";
-        public static final String INTAKE_DISTANCE_LEFT = "intake_distance_left";
-        public static final String INTAKE_DISTANCE_RIGHT = "intake_distance_right";
+        public static final String TURRET_LIMIT_LEFT = "turretLimitLeft";
+        public static final String TURRET_LIMIT_RIGHT = "turretLimitRight";
+        public static final String INTAKE_DISTANCE_LEFT = "intakeLeft";
+        public static final String INTAKE_DISTANCE_RIGHT = "intakeRight";
 
         // Odometry Pods
         public static final String LEFT_ENCODER = "left_encoder";
@@ -93,9 +93,15 @@ public class Constants {
         // Speed for the shooter wheel (0.0 to 1.0)
         public static final double SHOOTER_SPEED = 0.9;
         //SERVOs
-        public static final double HOOD_DEFAULT_POSITION = 0.5;
-        public static final double HOOD_UP_POSITION = 0.75;
-        public static final double HOOD_DOWN_POSITION = 0.25;
+        public static final double HOOD_MAX = 0.75;
+        public static final double HOOD_POS_8 = 0.6875;
+        public static final double HOOD_POS_7 = 0.625;
+        public static final double HOOD_POS_6 = 0.5625;
+        public static final double HOOD_CENTER = 0.5;
+        public static final double HOOD_POS_4 = 0.4375;
+        public static final double HOOD_POS_3 = 0.375;
+        public static final double HOOD_POS_2 = 0.3125;
+        public static final double HOOD_MIN = 0.25;
     }
 
     /**
@@ -112,9 +118,9 @@ public class Constants {
      * Contains constants for the Limelight subsystem
      */
     public static class LimelightConfig {
-        public static final double LIMELIGHT_HEIGHT = 20.0;
-        public static final double LIMELIGHT_ANGLE = 25.0;
-        public static final double APRIL_TAG_HEIGHT = 6.5;
+        public static final double LIMELIGHT_HEIGHT = 3.3599;
+        public static final double LIMELIGHT_ANGLE = 16.5;
+        public static final double APRIL_TAG_HEIGHT = 30.0;
     }
      /**
      * Contains constants for the automated launch sequence.

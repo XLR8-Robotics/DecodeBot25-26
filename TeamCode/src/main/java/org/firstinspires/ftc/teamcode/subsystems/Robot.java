@@ -244,7 +244,7 @@ public class Robot {
             shooter.setHoodPosition(shot.hood);
         } else {
             shooter.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
-            shooter.setHoodPosition(Constants.ShooterConfig.HOOD_DEFAULT_POSITION);
+            shooter.setHoodPosition(Constants.ShooterConfig.HOOD_CENTER);
         }
 
         // move the blocker out of the way.

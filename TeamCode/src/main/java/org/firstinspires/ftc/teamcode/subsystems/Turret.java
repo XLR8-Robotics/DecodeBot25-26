@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -16,6 +17,9 @@ public class Turret {
     private final DigitalChannel turretLimitLeft;
     private final DigitalChannel turretLimitRight;
 
+    private boolean isShooterBlocked = true;
+    private boolean previousSquareButtonState = false;
+
     public Turret(HardwareMap hardwareMap) {
         this.turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
         this.shooterBlocker = hardwareMap.get(Servo.class, Constants.HardwareConfig.SHOOTER_BLOCKER);
@@ -25,6 +29,32 @@ public class Turret {
         // Set the mode to input
         turretLimitLeft.setMode(DigitalChannel.Mode.INPUT);
         turretLimitRight.setMode(DigitalChannel.Mode.INPUT);
+
+        // Start with the shooter blocker in the blocking position
+        setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+    }
+
+    public void update(Gamepad gamepad) {
+        // Turret rotation with bumpers
+        if (gamepad.left_bumper) {
+            setPower(-Constants.TurretConfig.TURRET_SPEED);
+        } else if (gamepad.right_bumper) {
+            setPower(Constants.TurretConfig.TURRET_SPEED);
+        } else {
+            setPower(0);
+        }
+
+        // Shooter blocker toggle with square button
+        boolean currentSquareButtonState = gamepad.square;
+        if (currentSquareButtonState && !previousSquareButtonState) {
+            isShooterBlocked = !isShooterBlocked; // Toggle the state
+            if (isShooterBlocked) {
+                setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+            } else {
+                setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+            }
+        }
+        previousSquareButtonState = currentSquareButtonState;
     }
 
     public void setPower(double power) {

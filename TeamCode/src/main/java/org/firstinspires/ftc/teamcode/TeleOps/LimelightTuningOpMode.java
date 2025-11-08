@@ -16,9 +16,9 @@ public class LimelightTuningOpMode extends LinearOpMode {
 
     // These are the values you will tune from the dashboard.
     // Set them to your best-guess initial values.
-    public static double LIMELIGHT_HEIGHT = 20.0;   // inches
-    public static double LIMELIGHT_ANGLE = 25.0;    // degrees
-    public static double APRIL_TAG_HEIGHT = 6.5;    // inches
+    public static double LIMELIGHT_HEIGHT = 3.9599;   // inches
+    public static double LIMELIGHT_ANGLE = 16.5;    // degrees
+    public static double APRIL_TAG_HEIGHT = 30.0;    // inches
 
     // A known, measured distance to calibrate against.
     public static double ACTUAL_DISTANCE_IN = 72.0; // inches
