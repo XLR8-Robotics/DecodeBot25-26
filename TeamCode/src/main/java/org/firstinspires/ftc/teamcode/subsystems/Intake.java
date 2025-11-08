@@ -2,10 +2,12 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**
@@ -14,6 +16,8 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Intake {
     private final DcMotorEx intakeMotor;
     private final Servo liftServo;
+    private final DistanceSensor leftDistanceSensor;
+    private final DistanceSensor rightDistanceSensor;
 
     private boolean isLifted = false;
     private boolean previousCircleButtonState = false;
@@ -21,6 +25,9 @@ public class Intake {
     public Intake(HardwareMap hardwareMap) {
         this.intakeMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.INTAKE_MOTOR);
         this.liftServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.LIFT_SERVO);
+        this.leftDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_LEFT);
+        this.rightDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_RIGHT);
+
         // If the intake runs in the wrong direction, you can reverse it by uncommenting the next line.
         // this.intakeMotor.setDirection(DcMotor.Direction.REVERSE);
     }
@@ -33,18 +40,26 @@ public class Intake {
         // The right trigger controls intake, the left trigger controls outtake.
         double intakePower = gamepad.right_trigger - gamepad.left_trigger;
 
-        intakeMotor.setPower(intakePower * Constants.IntakeConfig.INTAKE_SPEED);
+        setPower(intakePower * Constants.IntakeConfig.INTAKE_SPEED);
 
         boolean currentCircleButtonState = gamepad.circle;
         if (currentCircleButtonState && !previousCircleButtonState) {
             isLifted = !isLifted;
             if (isLifted) {
-                liftServo.setPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
+                setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
             } else {
-                liftServo.setPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
+                setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
             }
         }
         previousCircleButtonState = currentCircleButtonState;
+    }
+
+    public void setPower(double power) {
+        intakeMotor.setPower(power);
+    }
+
+    public void setLiftPosition(double position) {
+        liftServo.setPosition(position);
     }
 
     /**
@@ -54,5 +69,20 @@ public class Intake {
     public double getMotorPower() {
         return intakeMotor.getPower();
     }
-    public double getLiftServoPosition(){return liftServo.getPosition();}
+    public double getLiftServoPosition(){
+        return liftServo.getPosition();
+    }
+
+    public double getLeftDistance(DistanceUnit unit) {
+        return leftDistanceSensor.getDistance(unit);
+    }
+
+    public double getRightDistance(DistanceUnit unit) {
+        return rightDistanceSensor.getDistance(unit);
+    }
+
+    public boolean isObjectDetected() {
+        return getLeftDistance(DistanceUnit.CM) < Constants.IntakeConfig.INTAKE_DISTANCE_THRESHOLD_CM ||
+               getRightDistance(DistanceUnit.CM) < Constants.IntakeConfig.INTAKE_DISTANCE_THRESHOLD_CM;
+    }
 }

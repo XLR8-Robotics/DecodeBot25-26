@@ -15,10 +15,13 @@ public class Shooter {
     private final Servo hoodServo;
     private boolean isRunning;
 
-    public Shooter(HardwareMap hardwareMap, String shooterMotorName, String hoodServoName) {
-        this.shooterMotor = hardwareMap.get(DcMotorEx.class, shooterMotorName);
-        this.hoodServo = hardwareMap.get(Servo.class, hoodServoName);
+    public Shooter(HardwareMap hardwareMap) {
+        this.shooterMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.SHOOTER_MOTOR);
+        this.hoodServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.HOOD_SERVO);
         this.isRunning = false;
+
+        // Set initial hood position
+        hoodServo.setPosition(Constants.ShooterConfig.HOOD_DEFAULT_POSITION);
 
         // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
         // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -31,21 +34,21 @@ public class Shooter {
     public void update(Gamepad gamepad) {
         // --- Shooter Motor Control ---
         if (gamepad.cross) {
-            shooterMotor.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
+            setPower(Constants.ShooterConfig.SHOOTER_SPEED);
             isRunning = true;
         } else {
-            shooterMotor.setPower(0);
+            setPower(0);
             isRunning = false;
         }
+    }
 
-        // --- Hood Servo Control ---
-        if (gamepad.dpad_up) {
-            hoodServo.setPosition(Constants.ShooterConfig.HOOD_UP_POSITION);
-        } else if (gamepad.dpad_down) {
-            hoodServo.setPosition(Constants.ShooterConfig.HOOD_DOWN_POSITION);
-        } else {
-            hoodServo.setPosition(Constants.ShooterConfig.HOOD_DEFAULT_POSITION);
-        }
+    public void setPower(double power) {
+        shooterMotor.setPower(power);
+        isRunning = power > 0;
+    }
+
+    public void setHoodPosition(double position) {
+        hoodServo.setPosition(position);
     }
 
     /**

@@ -5,6 +5,9 @@ public class PatternIdentifier {
     // Private constructor to prevent instantiation of this utility class
     private PatternIdentifier() {}
 
+    // Towers
+    public static final int TOWER_BLUE = 20;
+    public static final int TOWER_RED = 24;
     // Pattern IDs
     public static final int ID_GREEN_PURPLE_PURPLE = 21;
     public static final int ID_PURPLE_GREEN_PURPLE = 22;
