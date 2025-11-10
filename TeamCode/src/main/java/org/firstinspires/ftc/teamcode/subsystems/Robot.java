@@ -50,6 +50,15 @@ public class Robot {
     // Target side selection (default to BLUE)
     private TargetSide currentTargetSide = TargetSide.BLUE;
 
+    // Auto-aim state
+    private boolean autoAimEnabled = false;
+    private boolean previousTriangleButtonState = false;
+
+    // PID controller variables
+    private double integral = 0;
+    private double previousError = 0;
+    private final ElapsedTime pidTimer = new ElapsedTime();
+
     public Robot() {}
 
     public void init(HardwareMap hardwareMap) {
@@ -60,32 +69,49 @@ public class Robot {
         limelight = new Limelight(hardwareMap);
     }
 
-    /**
-     * This is the main update loop for the robot.
-     * It handles both manual control and the automated launch sequence.
-     */
     public void update(Gamepad gamepad) {
-        // Update the limelight data first
         limelight.update();
 
-        // --- Automated Turret Aiming ---
-        handleAutomatedAiming();
+        // --- Auto-Aim and Manual Turret Control ---
+        handleTurretControl(gamepad);
 
         // --- Launch Sequence Logic ---
-        // The launch sequence takes priority over all manual controls.
-        handleLaunchSequence(gamepad);
+        handleLaunchSequenceInput(gamepad);
+        updateLaunchSequence();
 
         // If the launch sequence is not active, allow manual control.
         if (currentLaunchState == LaunchSequenceState.IDLE) {
             // Drivetrain Control
-            double forward = -gamepad.left_stick_y;
-            double strafe = gamepad.left_stick_x;
-            double turn = gamepad.right_stick_x;
+            double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+            double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+            double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
             drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, -strafe), turn));
 
-            // Subsystem Control (excluding turret)
+            // Subsystem Control (excluding turret, which is handled in handleTurretControl)
             intake.update(gamepad);
             shooter.update(gamepad);
+        }
+    }
+    private void handleTurretControl(Gamepad gamepad) {
+        // Toggle auto-aim with the triangle button
+        boolean currentTriangleButtonState = gamepad.triangle;
+        if (currentTriangleButtonState && !previousTriangleButtonState) {
+            autoAimEnabled = !autoAimEnabled;
+            // Reset PID when toggling auto-aim
+            if (autoAimEnabled) {
+                integral = 0;
+                previousError = 0;
+                pidTimer.reset();
+            }
+        }
+        previousTriangleButtonState = currentTriangleButtonState;
+
+        if (autoAimEnabled) {
+            handleAutomatedAiming();
+        } else {
+            // When auto-aim is off, the turret is manually controlled.
+            // The turret's update method handles manual bumper controls and the shooter blocker.
+            turret.update(gamepad);
         }
     }
 
@@ -94,20 +120,15 @@ public class Robot {
         boolean hasValidTarget = false;
         double targetTx = 0.0;
 
-        // Get the target tag ID based on selected side
-        int targetTagId = (currentTargetSide == TargetSide.RED) 
-            ? PatternIdentifier.TOWER_RED 
-            : PatternIdentifier.TOWER_BLUE;
+        int targetTagId = (currentTargetSide == TargetSide.RED)
+                ? PatternIdentifier.TOWER_RED
+                : PatternIdentifier.TOWER_BLUE;
 
         if (limelight.hasTarget()) {
-            // Check all detected fiducials to find our target tag
-            // This prioritizes the selected target even if multiple tags are visible
             List<LLResultTypes.FiducialResult> fiducials = limelight.getFiducialResults();
-            
             for (LLResultTypes.FiducialResult fiducial : fiducials) {
                 if (fiducial.getFiducialId() == targetTagId) {
                     hasValidTarget = true;
-                    // Use the tx value from the specific target tag
                     targetTx = fiducial.getTargetXDegrees();
                     break;
                 }
@@ -115,52 +136,57 @@ public class Robot {
         }
 
         if (hasValidTarget) {
-            // Reset oscillation timer when target is found
             oscillationTimer.reset();
-            // P-controller for aiming using the target tag's tx value
-            turretPower = targetTx * Constants.TurretAimingConfig.AIMING_KP;
+
+            // PID controller logic
+            double error = targetTx;
+            double dt = pidTimer.seconds();
+            pidTimer.reset();
+
+            // Integral term
+            integral += error * dt;
+
+            // Derivative term
+            double derivative = (error - previousError) / dt;
+
+            // PID formula
+            turretPower = (Constants.TurretAimingConfig.AIMING_KP * error) +
+                          (Constants.TurretAimingConfig.AIMING_KI * integral) +
+                          (Constants.TurretAimingConfig.AIMING_KD * derivative);
+
+            previousError = error;
         } else if (Constants.TurretAimingConfig.ENABLE_OSCILLATION) {
-            // No target found - oscillate to search for target
             turretPower = calculateOscillationPower();
+        } else {
+            // Reset PID if no target is found and oscillation is off
+            integral = 0;
+            previousError = 0;
         }
 
         turret.setPower(turretPower);
     }
 
-    /**
-     * Calculates the oscillation power for the turret when no target is found.
-     * Uses a sine wave pattern to smoothly oscillate the turret left and right.
-     * Respects limit switches to prevent hitting physical limits.
-     * 
-     * @return The power to apply to the turret motor (-1.0 to 1.0)
-     */
     private double calculateOscillationPower() {
-        // Check limit switches first
         boolean atLeftLimit = turret.isLeftLimitPressed();
         boolean atRightLimit = turret.isRightLimitPressed();
 
-        // If at limits, reverse direction
         if (atLeftLimit) {
-            oscillationTimer.reset(); // Reset to start oscillation in opposite direction
-            return Constants.TurretAimingConfig.OSCILLATION_SPEED; // Move right
+            oscillationTimer.reset();
+            return Constants.TurretAimingConfig.OSCILLATION_SPEED;
         }
         if (atRightLimit) {
-            oscillationTimer.reset(); // Reset to start oscillation in opposite direction
-            return -Constants.TurretAimingConfig.OSCILLATION_SPEED; // Move left
+            oscillationTimer.reset();
+            return -Constants.TurretAimingConfig.OSCILLATION_SPEED;
         }
 
-        // Use sine wave for smooth oscillation
-        // Sine wave ranges from -1 to 1, which we scale by oscillation speed
         double timeSeconds = oscillationTimer.milliseconds() / 1000.0;
         double periodSeconds = Constants.TurretAimingConfig.OSCILLATION_PERIOD_MS / 1000.0;
         double sineValue = Math.sin(2.0 * Math.PI * timeSeconds / periodSeconds);
-        
+
         return sineValue * Constants.TurretAimingConfig.OSCILLATION_SPEED;
     }
 
-    private void handleLaunchSequence(Gamepad gamepad) {
-        // --- Cancel Logic ---
-        // Detect a triple press of the cross button to cancel the sequence.
+    private void handleLaunchSequenceInput(Gamepad gamepad) {
         if (gamepad.cross && crossPressTimer.milliseconds() > Constants.LaunchSequenceConfig.TRIPLE_PRESS_TIMEOUT_MS) {
             crossPressCount = 1;
             crossPressTimer.reset();
@@ -169,56 +195,46 @@ public class Robot {
         }
 
         if (crossPressCount >= 3) {
-            if (currentLaunchState != LaunchSequenceState.IDLE) {
-                currentLaunchState = LaunchSequenceState.CANCELLED;
-                sequenceTimer.reset(); // Reset timer for the cancel action
-            }
-            crossPressCount = 0; // Reset counter
+            cancelLaunchSequence();
+            crossPressCount = 0;
         }
 
-        // --- State Machine ---
+        if (currentLaunchState == LaunchSequenceState.IDLE) {
+            if (gamepad.cross && crossPressCount == 1 && crossPressTimer.milliseconds() < 200) {
+                startLaunchSequence();
+            }
+        }
+    }
+
+    public void updateLaunchSequence() {
         switch (currentLaunchState) {
             case IDLE:
-                // Start the sequence on a single press of the cross button.
-                if (gamepad.cross && crossPressCount == 1 && crossPressTimer.milliseconds() < 200) { // check for a single press
-                    startLaunchSequence();
-                }
                 break;
-
             case SPOOLING:
-                // Wait for the shooter to spin up.
                 if (sequenceTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS) {
                     currentLaunchState = LaunchSequenceState.FEEDING;
                 }
                 break;
-
             case FEEDING:
-                // Run the intake until the last ball is detected.
                 intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-                if (!intake.isObjectDetected()) { // Assuming this means the last ball has passed
+                if (!intake.isObjectDetected()) {
                     currentLaunchState = LaunchSequenceState.LIFTING;
                     sequenceTimer.reset();
                 }
                 break;
-
             case LIFTING:
-                // Lift the servo up, then down.
                 intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
-                if (sequenceTimer.milliseconds() > 500) { // Wait half a second
+                if (sequenceTimer.milliseconds() > 500) {
                     intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
                     currentLaunchState = LaunchSequenceState.FINISHING;
                 }
                 break;
-
             case FINISHING:
-                // Shut down all motors and reset.
                 stopAllMotors();
                 turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
                 currentLaunchState = LaunchSequenceState.IDLE;
                 break;
-
             case CANCELLED:
-                // Reverse the intake for a short time.
                 intake.setPower(-Constants.IntakeConfig.INTAKE_SPEED);
                 if (sequenceTimer.milliseconds() >= Constants.LaunchSequenceConfig.INTAKE_REVERSE_TIME_MS) {
                     stopAllMotors();
@@ -229,16 +245,14 @@ public class Robot {
         }
     }
 
-    private void startLaunchSequence() {
+    public void startLaunchSequence() {
+        if (currentLaunchState != LaunchSequenceState.IDLE) return;
         currentLaunchState = LaunchSequenceState.SPOOLING;
         sequenceTimer.reset();
-        
-        double distance = limelight.getDistanceToTarget();
 
-        // Get the interpolated power and hood values from our lookup table
+        double distance = limelight.getDistanceToTarget();
         ShooterTable.ShotParams shot = ShooterTable.getInterpolatedShot(distance);
 
-        // Use the calculated values if a target is visible, otherwise use defaults
         if (limelight.hasTarget()) {
             shooter.setPower(shot.power);
             shooter.setHoodPosition(shot.hood);
@@ -247,8 +261,14 @@ public class Robot {
             shooter.setHoodPosition(Constants.ShooterConfig.HOOD_CENTER);
         }
 
-        // move the blocker out of the way.
         turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+    }
+
+    public void cancelLaunchSequence() {
+        if (currentLaunchState != LaunchSequenceState.IDLE) {
+            currentLaunchState = LaunchSequenceState.CANCELLED;
+            sequenceTimer.reset();
+        }
     }
 
     public void stopAllMotors() {
@@ -257,33 +277,22 @@ public class Robot {
         shooter.setPower(0);
         turret.setPower(0);
     }
+
     public String getLaunchSequenceState(){
         return currentLaunchState.toString();
     }
 
-    /**
-     * Gets the currently selected target side.
-     * @return The current target side (RED or BLUE)
-     */
     public TargetSide getTargetSide() {
         return currentTargetSide;
     }
 
-    /**
-     * Sets the target side for turret aiming.
-     * @param side The target side to aim at (RED or BLUE)
-     */
     public void setTargetSide(TargetSide side) {
         this.currentTargetSide = side;
     }
 
-    /**
-     * Gets the current target tag ID based on the selected side.
-     * @return The AprilTag ID for the current target side
-     */
     public int getCurrentTargetTagId() {
-        return (currentTargetSide == TargetSide.RED) 
-            ? PatternIdentifier.TOWER_RED 
-            : PatternIdentifier.TOWER_BLUE;
+        return (currentTargetSide == TargetSide.RED)
+                ? PatternIdentifier.TOWER_RED
+                : PatternIdentifier.TOWER_BLUE;
     }
 }

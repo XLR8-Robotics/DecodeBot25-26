@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
@@ -16,8 +17,15 @@ public class TurretTuningOpMode extends LinearOpMode {
     private Turret turret;
     private Limelight limelight;
 
+    // PID controller variables
+    private double integral = 0;
+    private double previousError = 0;
+    private final ElapsedTime pidTimer = new ElapsedTime();
+
     // These are the values you will tune from the dashboard
     public static double AIMING_KP = 0.03; // Proportional gain
+    public static double AIMING_KI = 0.0;  // Integral gain
+    public static double AIMING_KD = 0.0;  // Derivative gain
     public static boolean autoAimEnabled = false;
 
     @Override
@@ -43,13 +51,25 @@ public class TurretTuningOpMode extends LinearOpMode {
                 // --- Automatic Aiming Logic ---
                 if (limelight.hasTarget()) {
                     // Get the horizontal error from the limelight
-                    double tx = limelight.getTx();
+                    double error = limelight.getTx();
+                    double dt = pidTimer.seconds();
+                    pidTimer.reset();
 
-                    // Apply the P-controller formula
-                    turretPower = tx * AIMING_KP;
+                    // Integral term
+                    integral += error * dt;
+
+                    // Derivative term
+                    double derivative = (error - previousError) / dt;
+
+                    // PID formula
+                    turretPower = (AIMING_KP * error) + (AIMING_KI * integral) + (AIMING_KD * derivative);
+
+                    previousError = error;
                 } else {
-                    // No target visible, do nothing
+                    // No target visible, do nothing and reset PID
                     turretPower = 0.0;
+                    integral = 0;
+                    previousError = 0;
                 }
             } else {
                 // --- Manual Turret Control ---
@@ -59,6 +79,9 @@ public class TurretTuningOpMode extends LinearOpMode {
                 } else if (gamepad1.left_bumper) {
                     turretPower = -0.4;
                 }
+                 // Reset PID when not in auto-aim mode
+                integral = 0;
+                previousError = 0;
             }
 
             // Apply power to the turret, respecting hardware limits
@@ -74,12 +97,15 @@ public class TurretTuningOpMode extends LinearOpMode {
             telemetry.addLine("--- Turret Tuning ---");
             telemetry.addData("Auto-Aim Enabled", autoAimEnabled);
             telemetry.addData("Aiming KP", AIMING_KP);
+            telemetry.addData("Aiming KI", AIMING_KI);
+            telemetry.addData("Aiming KD", AIMING_KD);
             telemetry.addLine();
             telemetry.addLine("--- Limelight Info ---");
             telemetry.addData("Has Target", limelight.hasTarget());
             telemetry.addData("Target tx (Error)", limelight.getTx());
             telemetry.addLine();
             telemetry.addLine("--- Motor Info ---");
+            telemetry.addData("Turret Angle", "%.2f degrees", turret.getAngle());
             telemetry.addData("Calculated Turret Power", turretPower);
             telemetry.addData("Actual Turret Power", turret.getMotorPower());
             telemetry.addData("Left Limit Pressed", turret.isLeftLimitPressed());

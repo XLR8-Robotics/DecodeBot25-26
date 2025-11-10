@@ -41,6 +41,13 @@ public class Constants {
     }
 
     /**
+     * Contains constants for the Drivetrain.
+     */
+    public static class DrivetrainConfig {
+        public static final double DRIVE_SPEED_MULTIPLIER = 0.8; // Adjust this value to change the robot's overall speed
+    }
+
+    /**
      * Contains constants for the Turret subsystem.
      */
     public static class TurretConfig {
@@ -49,14 +56,23 @@ public class Constants {
         // Servo positions for shooterBlocker Servo
         public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.0;
         public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.45;
+
+        // Encoder and Gear Ratio for Turret Angle Calculation
+        // This is for a goBILDA 5202 series motor. Change if you use a different motor.
+        public static final double TURRET_TICKS_PER_REV = 537.7;
+        // This is the gear ratio between the motor and the turret.
+        // Example: If the motor spins 4 times for every 1 turret rotation, the ratio is 4.0
+        public static final double TURRET_GEAR_RATIO = 1.0; // CHANGE THIS to your robot's gear ratio
     }
 
     /**
      * Contains constants for automating the turret aiming.
      */
     public static class TurretAimingConfig {
-        // Proportional gain for the aiming controller. Tune this value carefully.
+        // PID gains for the aiming controller. Tune these values carefully.
         public static final double AIMING_KP = 0.03;
+        public static final double AIMING_KI = 0.0; // Tune this to eliminate steady-state error
+        public static final double AIMING_KD = 0.0; // Tune this to reduce oscillation
 
         // Oscillation settings for when no target is found
         public static final double OSCILLATION_SPEED = 0.3;  // Speed of oscillation (0.0 to 1.0)

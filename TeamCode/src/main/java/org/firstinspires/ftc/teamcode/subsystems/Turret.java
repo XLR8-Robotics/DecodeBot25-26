@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -30,19 +31,31 @@ public class Turret {
         turretLimitLeft.setMode(DigitalChannel.Mode.INPUT);
         turretLimitRight.setMode(DigitalChannel.Mode.INPUT);
 
+        // Reset the encoder and set the motor to run using encoders.
+        turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // Start with the shooter blocker in the blocking position
         setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
     }
 
     public void update(Gamepad gamepad) {
-        // Turret rotation with bumpers
+        double turretPower = 0;
         if (gamepad.left_bumper) {
-            setPower(-Constants.TurretConfig.TURRET_SPEED);
+            turretPower = -Constants.TurretConfig.TURRET_SPEED;
         } else if (gamepad.right_bumper) {
-            setPower(Constants.TurretConfig.TURRET_SPEED);
-        } else {
-            setPower(0);
+            turretPower = Constants.TurretConfig.TURRET_SPEED;
         }
+
+        // Apply limit switch logic
+        if (isLeftLimitPressed() && turretPower < 0) {
+            turretPower = 0;
+        }
+        if (isRightLimitPressed() && turretPower > 0) {
+            turretPower = 0;
+        }
+
+        setPower(turretPower);
 
         // Shooter blocker toggle with square button
         boolean currentSquareButtonState = gamepad.square;
@@ -71,6 +84,17 @@ public class Turret {
 
     public double getShooterBlockerPosition() {
         return shooterBlocker.getPosition();
+    }
+
+    /**
+     * Calculates the current angle of the turret in degrees.
+     * @return The turret's angle.
+     */
+    public double getAngle() {
+        double ticks = turretMotor.getCurrentPosition();
+        double revolutions = ticks / Constants.TurretConfig.TURRET_TICKS_PER_REV;
+        double turretRotations = revolutions / Constants.TurretConfig.TURRET_GEAR_RATIO;
+        return turretRotations * 360;
     }
 
     /**

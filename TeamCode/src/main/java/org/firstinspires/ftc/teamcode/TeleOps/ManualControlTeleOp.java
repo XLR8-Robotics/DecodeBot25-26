@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
-import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -24,16 +22,8 @@ public class ManualControlTeleOp extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Drivetrain Control
-            double forward = -gamepad1.left_stick_y;
-            double strafe = gamepad1.left_stick_x;
-            double turn = gamepad1.right_stick_x;
-            robot.drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, -strafe), turn));
-
-            // Subsystem Control
-            robot.intake.update(gamepad1);
-            robot.shooter.update(gamepad1);
-            robot.turret.update(gamepad1);
+            // The main robot update loop handles all logic
+            robot.update(gamepad1);
 
             // --- Telemetry ---
             displayTelemetry();
@@ -55,6 +45,7 @@ public class ManualControlTeleOp extends LinearOpMode {
         telemetry.addData("Object Detected", robot.intake.isObjectDetected());
         telemetry.addData("Turret Left Limit", robot.turret.isLeftLimitPressed());
         telemetry.addData("Turret Right Limit", robot.turret.isRightLimitPressed());
+        telemetry.addData("Turret Angle", "%.2f degrees", robot.turret.getAngle());
 
         // --- Launch Sequence State ---
         telemetry.addData("Launch Sequence", robot.getLaunchSequenceState());
