@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -41,15 +42,20 @@ public class Odometry {
                 forwardEncoderForward ? GoBildaPinpointDriver.EncoderDirection.FORWARD : getReverseEnum(),
                 strafeEncoderForward ? GoBildaPinpointDriver.EncoderDirection.FORWARD : getReverseEnum()
         );
-        pinpoint.resetPosAndIMU();
+        reset(); // Reset position and IMU
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.RADIANS, 0));
 
         tryCreatePedroLocalizer();
     }
 
-    public void update() {
+    public void update(Gamepad gamepad) {
         if (pinpoint != null) {
             pinpoint.update();
+        }
+
+        // Example of manual control: reset odometry on button press
+        if (gamepad.start && gamepad.back) {
+            reset();
         }
     }
 
@@ -67,6 +73,25 @@ public class Odometry {
      */
     public Object getPedroLocalizer() {
         return pedroLocalizer;
+    }
+
+    /**
+     * Resets the robot's position and IMU heading.
+     */
+    public void reset() {
+        if (pinpoint != null) {
+            pinpoint.resetPosAndIMU();
+        }
+    }
+
+    /**
+     * Sets the robot's current pose estimate.
+     * @param pose The new pose.
+     */
+    public void setPose(Pose2D pose) {
+        if (pinpoint != null) {
+            pinpoint.setPosition(pose);
+        }
     }
 
     private void tryCreatePedroLocalizer() {
@@ -106,5 +131,3 @@ public class Odometry {
         }
     }
 }
-
-

@@ -53,10 +53,8 @@ public class Shooter {
         // --- Shooter Motor Control ---
         if (gamepad.cross) {
             setPower(Constants.ShooterConfig.SHOOTER_SPEED);
-            isRunning = true;
         } else {
-            setPower(0);
-            isRunning = false;
+            setPower(0.5);
         }
 
         // --- Hood Control ---

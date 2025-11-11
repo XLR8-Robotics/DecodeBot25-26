@@ -92,6 +92,20 @@ public class Robot {
             shooter.update(gamepad);
         }
     }
+
+    public void manualUpdate(Gamepad gamepad) {
+        // Drivetrain Control
+        double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, -strafe), turn));
+
+        // Subsystem Control
+        intake.update(gamepad);
+        shooter.update(gamepad);
+        turret.update(gamepad);
+    }
+
     private void handleTurretControl(Gamepad gamepad) {
         // Toggle auto-aim with the triangle button
         boolean currentTriangleButtonState = gamepad.triangle;

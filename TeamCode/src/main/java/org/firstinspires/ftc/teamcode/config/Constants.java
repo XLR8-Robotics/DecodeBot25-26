@@ -96,7 +96,7 @@ public class Constants {
         // Speed for the intake motor (0.0 to 1.0)
         public static final double INTAKE_SPEED = 0.8;
         public static final double LIFT_SERVO_NOT_LIFTING_POSITION = 0.0;
-        public static final double LIFT_SERVO_LIFTING_POSITION = 0.65;
+        public static final double LIFT_SERVO_LIFTING_POSITION = 0.75;
         // Distance threshold in centimeters for detecting an object
         public static final double INTAKE_DISTANCE_THRESHOLD_CM = 5.0;
 

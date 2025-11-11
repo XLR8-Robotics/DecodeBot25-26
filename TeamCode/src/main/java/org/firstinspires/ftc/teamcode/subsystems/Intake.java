@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
@@ -19,8 +20,16 @@ public class Intake {
     private final DistanceSensor leftDistanceSensor;
     private final DistanceSensor rightDistanceSensor;
 
-    private boolean isLifted = false;
     private boolean previousCircleButtonState = false;
+
+    // State machine for the lift servo
+    private enum LiftState {
+        IDLE,
+        LIFTING
+    }
+    private LiftState currentLiftState = LiftState.IDLE;
+    private final ElapsedTime liftTimer = new ElapsedTime();
+
 
     public Intake(HardwareMap hardwareMap) {
         this.intakeMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.INTAKE_MOTOR);
@@ -42,15 +51,28 @@ public class Intake {
 
         setPower(intakePower * Constants.IntakeConfig.INTAKE_SPEED);
 
+        // --- Lift Servo Logic ---
         boolean currentCircleButtonState = gamepad.circle;
-        if (currentCircleButtonState && !previousCircleButtonState) {
-            isLifted = !isLifted;
-            if (isLifted) {
-                setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
-            } else {
-                setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
-            }
+
+        // State machine for the lift servo
+        switch (currentLiftState) {
+            case IDLE:
+                // On button press, start the lifting sequence
+                if (currentCircleButtonState && !previousCircleButtonState) {
+                    setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
+                    liftTimer.reset();
+                    currentLiftState = LiftState.LIFTING;
+                }
+                break;
+            case LIFTING:
+                // After a 500ms delay, return the servo to the down position
+                if (liftTimer.milliseconds() > 500) {
+                    setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
+                    currentLiftState = LiftState.IDLE;
+                }
+                break;
         }
+
         previousCircleButtonState = currentCircleButtonState;
     }
 
