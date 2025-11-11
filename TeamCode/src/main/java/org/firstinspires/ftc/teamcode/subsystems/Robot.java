@@ -17,6 +17,8 @@ public class Robot {
 
     // Subsystems
     public MecanumDrive drivetrain;
+    
+    public BasicDriveTrain basicDriveTrain;
     public Intake intake;
     public Shooter shooter;
     public Turret turret;
@@ -67,6 +69,7 @@ public class Robot {
         shooter = new Shooter(hardwareMap);
         turret = new Turret(hardwareMap);
         limelight = new Limelight(hardwareMap);
+        basicDriveTrain = new BasicDriveTrain(hardwareMap);
     }
 
     public void update(Gamepad gamepad) {
@@ -85,7 +88,7 @@ public class Robot {
             double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
             double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
             double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-            drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, -strafe), turn));
+            basicDriveTrain.drive(forward, strafe, turn);
 
             // Subsystem Control (excluding turret, which is handled in handleTurretControl)
             intake.update(gamepad);
@@ -95,10 +98,7 @@ public class Robot {
 
     public void manualUpdate(Gamepad gamepad) {
         // Drivetrain Control
-        double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-        double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-        double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-        drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, -strafe), turn));
+        basicDriveTrain.drive(gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);
 
         // Subsystem Control
         intake.update(gamepad);
@@ -286,7 +286,7 @@ public class Robot {
     }
 
     public void stopAllMotors() {
-        drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
+        basicDriveTrain.drive(0, 0, 0);
         intake.setPower(0);
         shooter.setPower(0);
         turret.setPower(0);
