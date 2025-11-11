@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
-@TeleOp(name = "Manual Control", group = "Game")
+@TeleOp(name = "MC With Launch Sequence", group = "Game")
 public class ManualControlTeleOp extends LinearOpMode {
 
     private Robot robot;
