@@ -140,6 +140,58 @@ public class Limelight {
     }
 
     /**
+     * Calculates the robot's field pose based on vision data and a known AprilTag position.
+     * This method works backward from the known tag position using the camera's measurements.
+     * @param knownTagPose The known field position of the detected AprilTag
+     * @return The calculated robot pose, or null if no target is visible or calculation fails
+     */
+    public com.pedropathing.geometry.Pose getVisionBasedRobotPose(com.pedropathing.geometry.Pose knownTagPose) {
+        if (!hasTarget() || knownTagPose == null) {
+            return null;
+        }
+        
+        try {
+            // Get vision measurements
+            double tx = getTx(); // Horizontal offset in degrees
+            double distance = getDistanceToTarget(); // Distance to tag in inches
+            
+            if (distance <= 0) {
+                return null; // Invalid distance measurement
+            }
+            
+            // Convert tx to radians
+            double txRadians = Math.toRadians(tx);
+            
+            // Calculate the angle from the tag to the robot in field coordinates
+            // The camera sees the tag at angle tx, so the robot is at angle (tag_heading + tx + 180°) from the tag
+            double angleFromTagToRobot = knownTagPose.getHeading() + txRadians + Math.PI;
+            
+            // Calculate robot position relative to the tag
+            double robotX = knownTagPose.getX() + distance * Math.cos(angleFromTagToRobot);
+            double robotY = knownTagPose.getY() + distance * Math.sin(angleFromTagToRobot);
+            
+            // The robot's heading is approximately the angle it's looking at the tag
+            // This is a simplified calculation - more sophisticated approaches would use
+            // the robot's IMU or multiple measurements for better accuracy
+            double robotHeading = angleFromTagToRobot + Math.PI - txRadians;
+            
+            // Normalize the heading to [-π, π]
+            while (robotHeading > Math.PI) {
+                robotHeading -= 2 * Math.PI;
+            }
+            while (robotHeading < -Math.PI) {
+                robotHeading += 2 * Math.PI;
+            }
+            
+            return new com.pedropathing.geometry.Pose(robotX, robotY, robotHeading);
+            
+        } catch (Exception e) {
+            // Return null if any calculation fails
+            return null;
+        }
+    }
+
+    /**
      * Stops the Limelight polling. Should be called when done using the Limelight.
      */
     public void stop() {

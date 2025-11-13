@@ -1,299 +1,302 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.Vector2d;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.config.Constants;
+import org.firstinspires.ftc.teamcode.config.FieldConstants;
 import org.firstinspires.ftc.teamcode.utils.PatternIdentifier;
 import org.firstinspires.ftc.teamcode.utils.ShooterTable;
 
 import java.util.List;
 
+/**
+ * Main Robot class that manages all subsystems and provides both simple manual control
+ * and automated launch sequences. Supports both legacy and enhanced aiming modes.
+ */
 public class Robot {
 
-    // Subsystems
-    public MecanumDrive drivetrain;
+    // =================================================================================
+    // SUBSYSTEM INSTANCES
+    // =================================================================================
     
+    // Core subsystems
     public BasicDriveTrain basicDriveTrain;
     public Intake intake;
     public Shooter shooter;
     public Turret turret;
     public Limelight limelight;
+    
+    // Advanced motion control (optional - for enhanced aiming)
+    public Follower follower;
+    public AimingController aimingController;
+    
+    // Advanced shooting control (optional - for automatic shooting)
+    public ShootingController shootingController;
+    
+    // Launch sequence control (cleaner implementation)
+    public LaunchSequenceController launchSequenceController;
 
-    // Enum for target side selection
+    // =================================================================================
+    // ENUMS AND CONFIGURATION
+    // =================================================================================
+    
+    /** Enum for target side selection */
     public enum TargetSide {
         RED,
         BLUE
     }
-
-    // State Machine for the Launch Sequence
-    private enum LaunchSequenceState {
-        IDLE,           // Not running, waiting for start command
-        SPOOLING,       // Shooter motor is spinning up
-        FEEDING,        // Intake is running to feed balls
-        LIFTING,        // Lift servo is moving up and down
-        FINISHING,      // Sequence is complete, shutting down motors
-        CANCELLED,      // Sequence was cancelled, reversing intake
+    
+    /** Enum for aiming system mode */
+    public enum AimingMode {
+        LEGACY,    // Original PID-based aiming (backward compatibility)
+        ENHANCED   // New AimingController with pedropathing integration
     }
-    private LaunchSequenceState currentLaunchState = LaunchSequenceState.IDLE;
+    
+    /** Enum for shooting system mode */
+    public enum ShootingMode {
+        MANUAL,    // Manual control only (backward compatibility)
+        AUTOMATIC  // Automatic distance-based shooting with ShootingController
+    }
 
-    // Timers and press counters for the sequence
-    private final ElapsedTime sequenceTimer = new ElapsedTime();
-    private int crossPressCount = 0;
-    private final ElapsedTime crossPressTimer = new ElapsedTime();
-
-    // Timer for turret oscillation when no target is found
-    private final ElapsedTime oscillationTimer = new ElapsedTime();
-
-    // Target side selection (default to BLUE)
+    // Launch sequence state is now managed by LaunchSequenceController
+    
+    // =================================================================================
+    // PRIVATE STATE VARIABLES
+    // =================================================================================
+    
+    // Robot configuration
     private TargetSide currentTargetSide = TargetSide.BLUE;
+    private AimingMode currentAimingMode = AimingMode.LEGACY;
+    private ShootingMode currentShootingMode = ShootingMode.MANUAL;
+    
+    // =================================================================================
+    // CONSTRUCTORS
+    // =================================================================================
 
-    // Auto-aim state
-    private boolean autoAimEnabled = false;
-    private boolean previousTriangleButtonState = false;
-
-    // PID controller variables
-    private double integral = 0;
-    private double previousError = 0;
-    private final ElapsedTime pidTimer = new ElapsedTime();
-
-    public Robot() {}
-
+    /**
+     * Default constructor for backward compatibility.
+     * Uses legacy aiming mode with basic PID control.
+     */
+    public Robot() {
+        this.currentAimingMode = AimingMode.LEGACY;
+    }
+    
+    /**
+     * Enhanced constructor with pedropathing integration.
+     * @param follower The pedropathing Follower for odometry and motion control
+     */
+    public Robot(Follower follower) {
+        this.follower = follower;
+        this.currentAimingMode = AimingMode.ENHANCED;
+    }
+    
+    /**
+     * Legacy initialization method for backward compatibility.
+     * Initializes all subsystems without advanced aiming.
+     * @param hardwareMap The hardware map from the OpMode
+     */
     public void init(HardwareMap hardwareMap) {
-        drivetrain = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        init(hardwareMap, AimingMode.LEGACY);
+    }
+    
+    /**
+     * Enhanced initialization method with aiming mode selection.
+     * @param hardwareMap The hardware map from the OpMode
+     * @param aimingMode The aiming system mode to use
+     */
+    public void init(HardwareMap hardwareMap, AimingMode aimingMode) {
+        init(hardwareMap, aimingMode, ShootingMode.MANUAL);
+    }
+    
+    /**
+     * Complete initialization method with both aiming and shooting mode selection.
+     * @param hardwareMap The hardware map from the OpMode
+     * @param aimingMode The aiming system mode to use
+     * @param shootingMode The shooting system mode to use
+     */
+    public void init(HardwareMap hardwareMap, AimingMode aimingMode, ShootingMode shootingMode) {
+        // Initialize basic subsystems
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap);
         turret = new Turret(hardwareMap);
         limelight = new Limelight(hardwareMap);
         basicDriveTrain = new BasicDriveTrain(hardwareMap);
+        
+        // Initialize launch sequence controller (always available)
+        launchSequenceController = new LaunchSequenceController(
+            intake, shooter, turret, limelight, basicDriveTrain);
+        
+        // Set modes
+        this.currentAimingMode = aimingMode;
+        this.currentShootingMode = shootingMode;
+        
+        // Initialize enhanced aiming system if requested and follower is available
+        if (aimingMode == AimingMode.ENHANCED && follower != null) {
+            aimingController = new AimingController(turret, limelight, follower);
+        }
+        
+        // Initialize automatic shooting system if requested
+        if (shootingMode == ShootingMode.AUTOMATIC) {
+            shootingController = new ShootingController(shooter, limelight);
+        }
+    }
+    
+    /**
+     * Complete initialization method for enhanced mode.
+     * @param hardwareMap The hardware map from the OpMode
+     * @param follower The pedropathing Follower for odometry
+     */
+    public void init(HardwareMap hardwareMap, Follower follower) {
+        this.follower = follower;
+        init(hardwareMap, AimingMode.ENHANCED, ShootingMode.MANUAL);
+    }
+    
+    /**
+     * Complete initialization method for enhanced mode with automatic shooting.
+     * @param hardwareMap The hardware map from the OpMode
+     * @param follower The pedropathing Follower for odometry
+     * @param shootingMode The shooting system mode to use
+     */
+    public void init(HardwareMap hardwareMap, Follower follower, ShootingMode shootingMode) {
+        this.follower = follower;
+        init(hardwareMap, AimingMode.ENHANCED, shootingMode);
     }
 
+    // =================================================================================
+    // PUBLIC UPDATE METHODS
+    // =================================================================================
+
+    /**
+     * Main update method with launch sequence support.
+     * Use this when you want the launch sequence functionality.
+     */
     public void update(Gamepad gamepad) {
         limelight.update();
+        
+        // Update automatic shooting system if enabled
+        if (shootingController != null) {
+            shootingController.update();
+        }
 
-        // --- Auto-Aim and Manual Turret Control ---
-        handleTurretControl(gamepad);
-
-        // --- Launch Sequence Logic ---
-        handleLaunchSequenceInput(gamepad);
-        updateLaunchSequence();
+        // Update launch sequence controller
+        launchSequenceController.update(gamepad);
 
         // If the launch sequence is not active, allow manual control.
-        if (currentLaunchState == LaunchSequenceState.IDLE) {
-            // Drivetrain Control
-            double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-            double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-            double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-            basicDriveTrain.drive(forward, strafe, turn);
-
-            // Subsystem Control (excluding turret, which is handled in handleTurretControl)
-            intake.update(gamepad);
-            shooter.update(gamepad);
+        if (!launchSequenceController.isRunning()) {
+            updateDrivetrainControl(gamepad);
+            updateSubsystemsManualControl(gamepad);
         }
     }
 
+    /**
+     * Pure manual control update method - NO launch sequence.
+     * Use this for simple manual control without automated sequences.
+     */
     public void manualUpdate(Gamepad gamepad) {
-        // Drivetrain Control
-        basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.right_stick_x, -gamepad.left_stick_x);
+        limelight.update();
+        
+        // Update automatic shooting system if enabled
+        if (shootingController != null) {
+            shootingController.update();
+        }
+        
+        updateDrivetrainControl(gamepad);
+        updateSubsystemsManualControl(gamepad);
+    }
 
-        // Subsystem Control
+    // =================================================================================
+    // PRIVATE HELPER METHODS
+    // =================================================================================
+    
+    /**
+     * Updates drivetrain control based on gamepad input.
+     * @param gamepad The gamepad to read input from
+     */
+    private void updateDrivetrainControl(Gamepad gamepad) {
+        double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        basicDriveTrain.drive(forward, strafe, turn);
+    }
+    
+    /**
+     * Updates all subsystems with manual control.
+     * @param gamepad The gamepad to read input from
+     */
+    private void updateSubsystemsManualControl(Gamepad gamepad) {
         intake.update(gamepad);
         shooter.update(gamepad);
-        turret.update(gamepad);
+        turret.manualUpdate(gamepad);
     }
 
-    private void handleTurretControl(Gamepad gamepad) {
-        // Toggle auto-aim with the triangle button
-        boolean currentTriangleButtonState = gamepad.triangle;
-        if (currentTriangleButtonState && !previousTriangleButtonState) {
-            autoAimEnabled = !autoAimEnabled;
-            // Reset PID when toggling auto-aim
-            if (autoAimEnabled) {
-                integral = 0;
-                previousError = 0;
-                pidTimer.reset();
-            }
-        }
-        previousTriangleButtonState = currentTriangleButtonState;
+    // =================================================================================
+    // LAUNCH SEQUENCE METHODS (now delegating to LaunchSequenceController)
+    // =================================================================================
 
-        if (autoAimEnabled) {
-            handleAutomatedAiming();
-        } else {
-            // When auto-aim is off, the turret is manually controlled.
-            // The turret's update method handles manual bumper controls and the shooter blocker.
-            turret.update(gamepad);
-        }
+    /**
+     * Starts the launch sequence.
+     * @return true if sequence was started, false if already running
+     */
+    public boolean startLaunchSequence() {
+        return launchSequenceController.startSequence();
     }
 
-    private void handleAutomatedAiming() {
-        double turretPower = 0.0;
-        boolean hasValidTarget = false;
-        double targetTx = 0.0;
-
-        int targetTagId = (currentTargetSide == TargetSide.RED)
-                ? PatternIdentifier.TOWER_RED
-                : PatternIdentifier.TOWER_BLUE;
-
-        if (limelight.hasTarget()) {
-            List<LLResultTypes.FiducialResult> fiducials = limelight.getFiducialResults();
-            for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                if (fiducial.getFiducialId() == targetTagId) {
-                    hasValidTarget = true;
-                    targetTx = fiducial.getTargetXDegrees();
-                    break;
-                }
-            }
-        }
-
-        if (hasValidTarget) {
-            oscillationTimer.reset();
-
-            // PID controller logic
-            double error = targetTx;
-            double dt = pidTimer.seconds();
-            pidTimer.reset();
-
-            // Integral term
-            integral += error * dt;
-
-            // Derivative term
-            double derivative = (error - previousError) / dt;
-
-            // PID formula
-            turretPower = (Constants.TurretAimingConfig.AIMING_KP * error) +
-                          (Constants.TurretAimingConfig.AIMING_KI * integral) +
-                          (Constants.TurretAimingConfig.AIMING_KD * derivative);
-
-            previousError = error;
-        } else if (Constants.TurretAimingConfig.ENABLE_OSCILLATION) {
-            turretPower = calculateOscillationPower();
-        } else {
-            // Reset PID if no target is found and oscillation is off
-            integral = 0;
-            previousError = 0;
-        }
-
-        turret.setPower(turretPower);
+    /**
+     * Cancels the current launch sequence.
+     * @return true if sequence was cancelled, false if not running
+     */
+    public boolean cancelLaunchSequence() {
+        return launchSequenceController.cancelSequence();
     }
 
-    private double calculateOscillationPower() {
-        boolean atLeftLimit = turret.isLeftLimitPressed();
-        boolean atRightLimit = turret.isRightLimitPressed();
-
-        if (atLeftLimit) {
-            oscillationTimer.reset();
-            return Constants.TurretAimingConfig.OSCILLATION_SPEED;
-        }
-        if (atRightLimit) {
-            oscillationTimer.reset();
-            return -Constants.TurretAimingConfig.OSCILLATION_SPEED;
-        }
-
-        double timeSeconds = oscillationTimer.milliseconds() / 1000.0;
-        double periodSeconds = Constants.TurretAimingConfig.OSCILLATION_PERIOD_MS / 1000.0;
-        double sineValue = Math.sin(2.0 * Math.PI * timeSeconds / periodSeconds);
-
-        return sineValue * Constants.TurretAimingConfig.OSCILLATION_SPEED;
+    /**
+     * Emergency stop for the launch sequence.
+     */
+    public void emergencyStopLaunchSequence() {
+        launchSequenceController.emergencyStop();
     }
 
-    private void handleLaunchSequenceInput(Gamepad gamepad) {
-        if (gamepad.cross && crossPressTimer.milliseconds() > Constants.LaunchSequenceConfig.TRIPLE_PRESS_TIMEOUT_MS) {
-            crossPressCount = 1;
-            crossPressTimer.reset();
-        } else if (gamepad.cross && crossPressCount > 0) {
-            crossPressCount++;
-        }
-
-        if (crossPressCount >= 3) {
-            cancelLaunchSequence();
-            crossPressCount = 0;
-        }
-
-        if (currentLaunchState == LaunchSequenceState.IDLE) {
-            if (gamepad.cross && crossPressCount == 1 && crossPressTimer.milliseconds() < 200) {
-                startLaunchSequence();
-            }
-        }
-    }
-
-    public void updateLaunchSequence() {
-        switch (currentLaunchState) {
-            case IDLE:
-                break;
-            case SPOOLING:
-                if (sequenceTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS) {
-                    currentLaunchState = LaunchSequenceState.FEEDING;
-                }
-                break;
-            case FEEDING:
-                intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-                if (!intake.isObjectDetected()) {
-                    currentLaunchState = LaunchSequenceState.LIFTING;
-                    sequenceTimer.reset();
-                }
-                break;
-            case LIFTING:
-                intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
-                if (sequenceTimer.milliseconds() > 500) {
-                    intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
-                    currentLaunchState = LaunchSequenceState.FINISHING;
-                }
-                break;
-            case FINISHING:
-                stopAllMotors();
-                turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
-                currentLaunchState = LaunchSequenceState.IDLE;
-                break;
-            case CANCELLED:
-                intake.setPower(-Constants.IntakeConfig.INTAKE_SPEED);
-                if (sequenceTimer.milliseconds() >= Constants.LaunchSequenceConfig.INTAKE_REVERSE_TIME_MS) {
-                    stopAllMotors();
-                    turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
-                    currentLaunchState = LaunchSequenceState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void startLaunchSequence() {
-        if (currentLaunchState != LaunchSequenceState.IDLE) return;
-        currentLaunchState = LaunchSequenceState.SPOOLING;
-        sequenceTimer.reset();
-
-        double distance = limelight.getDistanceToTarget();
-        ShooterTable.ShotParams shot = ShooterTable.getInterpolatedShot(distance);
-
-        if (limelight.hasTarget()) {
-            shooter.setPower(shot.power);
-            shooter.setHoodPosition(shot.hood);
-        } else {
-            shooter.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
-            shooter.setHoodPosition(Constants.ShooterConfig.HOOD_CENTER);
-        }
-
-        turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
-    }
-
-    public void cancelLaunchSequence() {
-        if (currentLaunchState != LaunchSequenceState.IDLE) {
-            currentLaunchState = LaunchSequenceState.CANCELLED;
-            sequenceTimer.reset();
-        }
-    }
-
+    /**
+     * Stops all motors safely.
+     */
     public void stopAllMotors() {
-        basicDriveTrain.drive(0, 0, 0);
-        intake.setPower(0);
-        shooter.setPower(0);
-        turret.setPower(0);
+        if (launchSequenceController != null) {
+            launchSequenceController.emergencyStop();
+        } else {
+            // Fallback for when controller isn't initialized yet
+            basicDriveTrain.drive(0, 0, 0);
+            if (intake != null) intake.setPower(0);
+            if (shooter != null) shooter.setPower(0);
+            if (turret != null) turret.setPower(0);
+        }
     }
 
-    public String getLaunchSequenceState(){
-        return currentLaunchState.toString();
+    // =================================================================================
+    // PUBLIC GETTER/SETTER METHODS
+    // =================================================================================
+
+    /**
+     * Gets the current launch sequence state as a string.
+     * @return Current launch sequence state description
+     */
+    public String getLaunchSequenceState() {
+        return launchSequenceController != null 
+            ? launchSequenceController.getCurrentState().toString()
+            : "NOT_INITIALIZED";
+    }
+
+    /**
+     * Gets detailed launch sequence status for telemetry.
+     * @return Formatted status string with state and timing
+     */
+    public String getLaunchSequenceStatus() {
+        return launchSequenceController != null 
+            ? launchSequenceController.getStatusString()
+            : "Launch Controller Not Initialized";
     }
 
     public TargetSide getTargetSide() {
@@ -305,8 +308,77 @@ public class Robot {
     }
 
     public int getCurrentTargetTagId() {
-        return (currentTargetSide == TargetSide.RED)
-                ? PatternIdentifier.TOWER_RED
-                : PatternIdentifier.TOWER_BLUE;
+        if (currentAimingMode == AimingMode.ENHANCED) {
+            // DECODE season AprilTag IDs
+            return (currentTargetSide == TargetSide.RED) 
+                ? FieldConstants.RED_APRILTAG_ID 
+                : FieldConstants.BLUE_APRILTAG_ID;
+        } else {
+            // Legacy mode using PatternIdentifier
+            return (currentTargetSide == TargetSide.RED)
+                    ? PatternIdentifier.TOWER_RED
+                    : PatternIdentifier.TOWER_BLUE;
+        }
+    }
+    
+    /**
+     * Get the current aiming mode.
+     * @return The current AimingMode (LEGACY or ENHANCED)
+     */
+    public AimingMode getAimingMode() {
+        return currentAimingMode;
+    }
+    
+    
+    /**
+     * Get the pedropathing Follower (if using enhanced mode).
+     * @return The Follower instance, or null if in legacy mode
+     */
+    public Follower getFollower() {
+        return follower;
+    }
+    
+    /**
+     * Get the AimingController (if using enhanced mode).
+     * @return The AimingController instance, or null if in legacy mode
+     */
+    public AimingController getAimingController() {
+        return aimingController;
+    }
+    
+    /**
+     * Get the current shooting system mode.
+     * @return The current ShootingMode
+     */
+    public ShootingMode getShootingMode() {
+        return currentShootingMode;
+    }
+    
+    /**
+     * Get the ShootingController (if using automatic shooting mode).
+     * @return The ShootingController instance, or null if in manual mode
+     */
+    public ShootingController getShootingController() {
+        return shootingController;
+    }
+    
+    /**
+     * Set the shooting system mode.
+     * @param shootingMode The new shooting mode
+     */
+    public void setShootingMode(ShootingMode shootingMode) {
+        if (currentShootingMode != shootingMode) {
+            currentShootingMode = shootingMode;
+            
+            if (shootingMode == ShootingMode.AUTOMATIC && shootingController == null) {
+                // Create shooting controller if it doesn't exist
+                shootingController = new ShootingController(shooter, limelight);
+            }
+            
+            // Update shooter state based on mode
+            if (shootingController != null) {
+                shootingController.setAutoShootingEnabled(shootingMode == ShootingMode.AUTOMATIC);
+            }
+        }
     }
 }
