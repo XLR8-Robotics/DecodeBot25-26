@@ -107,7 +107,11 @@ public class Constants {
      */
     public static class ShooterConfig {
         // Speed for the shooter wheel (0.0 to 1.0)
-        public static final double SHOOTER_SPEED = 0.9;
+        public static final double SHOOTER_SPEED_85 = 0.85;
+        public static final double SHOOTER_SPEED_80 = 0.8;
+        public static final double SHOOTER_SPEED_75 = 0.75;
+        public static final double SHOOTER_SPEED_0 = 0.70;
+
         //SERVOs
         public static final double HOOD_MAX = 0.75;
         public static final double HOOD_POS_8 = 0.6875;

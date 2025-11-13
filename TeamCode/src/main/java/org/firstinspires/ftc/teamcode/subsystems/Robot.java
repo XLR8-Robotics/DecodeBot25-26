@@ -98,7 +98,7 @@ public class Robot {
 
     public void manualUpdate(Gamepad gamepad) {
         // Drivetrain Control
-        basicDriveTrain.drive(gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);
+        basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.right_stick_x, -gamepad.left_stick_x);
 
         // Subsystem Control
         intake.update(gamepad);

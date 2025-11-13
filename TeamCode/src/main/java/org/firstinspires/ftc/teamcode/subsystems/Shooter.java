@@ -29,9 +29,11 @@ public class Shooter {
             Constants.ShooterConfig.HOOD_POS_8,
             Constants.ShooterConfig.HOOD_MAX
     );
-    private int currentHoodPositionIndex = 4; // Start at center position
+    private int currentHoodPositionIndex = 0; // Start at center position
     private boolean previousDpadUpState = false;
     private boolean previousDpadDownState = false;
+    private boolean previousTriangleButtonState = false;
+    private boolean isInitialized = false;
 
     public Shooter(HardwareMap hardwareMap) {
         this.shooterMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.SHOOTER_MOTOR);
@@ -40,6 +42,7 @@ public class Shooter {
 
         // Set initial hood position
         setHoodPosition(hoodPositions.get(currentHoodPositionIndex));
+
 
         // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
         // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -51,10 +54,18 @@ public class Shooter {
      */
     public void update(Gamepad gamepad) {
         // --- Shooter Motor Control ---
-        if (gamepad.cross) {
+        if (gamepad.cross && isInitialized)
             setPower(Constants.ShooterConfig.SHOOTER_SPEED);
-        } else {
-            setPower(0.5);
+
+        boolean currentTriangleButtonState = gamepad.triangle;
+        if(currentTriangleButtonState&& !previousTriangleButtonState) {
+            isInitialized = !isInitialized;
+
+            if (isInitialized) {
+                setPower(0.5);
+            } else {
+                setPower(0);
+            }
         }
 
         // --- Hood Control ---

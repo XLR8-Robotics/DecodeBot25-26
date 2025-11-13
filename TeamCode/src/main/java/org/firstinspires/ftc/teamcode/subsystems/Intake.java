@@ -66,7 +66,7 @@ public class Intake {
                 break;
             case LIFTING:
                 // After a 500ms delay, return the servo to the down position
-                if (liftTimer.milliseconds() > 500) {
+                if (liftTimer.milliseconds() > 350) {
                     setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
                     currentLiftState = LiftState.IDLE;
                 }
