@@ -37,7 +37,7 @@ public class Shooter {
             Constants.ShooterConfig.HOOD_CENTER,
             Constants.ShooterConfig.HOOD_MAX
     );
-    private int currentHoodPositionIndex = 4; // Start at center position (index 4)
+    private int currentHoodPositionIndex = 2; // Start at center position (index 4)
     private boolean previousDpadUpState = false;
     private boolean previousDpadDownState = false;
     private boolean previousTriangleButtonState = false;

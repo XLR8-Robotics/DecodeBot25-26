@@ -55,6 +55,8 @@ public class LaunchSequenceController {
     private LaunchState currentState = LaunchState.IDLE;
     private final ElapsedTime stateTimer = new ElapsedTime();
     private final ButtonPressDetector crossButton = new ButtonPressDetector();
+
+    private boolean shooterBlocked = true;
     
     // =================================================================================
     // CONSTRUCTOR
@@ -93,9 +95,8 @@ public class LaunchSequenceController {
         if (currentState != LaunchState.IDLE) {
             return false; // Already running
         }
-        
-        transitionToState(LaunchState.SPOOLING);
         prepareForLaunch();
+        transitionToState(LaunchState.SPOOLING);
         return true;
     }
     
@@ -195,7 +196,8 @@ public class LaunchSequenceController {
      * Handles the SPOOLING state - waiting for shooter to reach speed.
      */
     private void updateSpoolingState() {
-        if (stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS) {
+        shooter.setPower(0.5);
+        if (stateTimer.milliseconds() >= 1000) {
             transitionToState(LaunchState.FEEDING);
         }
     }
@@ -205,8 +207,7 @@ public class LaunchSequenceController {
      */
     private void updateFeedingState() {
         intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-        
-        if (!intake.isObjectDetected()) {
+        if(stateTimer.milliseconds() > 1500){
             transitionToState(LaunchState.LIFTING);
         }
     }
@@ -228,7 +229,7 @@ public class LaunchSequenceController {
      */
     private void updateFinishingState() {
         stopAllMotors();
-        setShooterBlocker(true); // Block shooter
+        setShooterBlocker(); // Block shooter
         transitionToState(LaunchState.IDLE);
     }
     
@@ -240,7 +241,7 @@ public class LaunchSequenceController {
         
         if (stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.INTAKE_REVERSE_TIME_MS) {
             stopAllMotors();
-            setShooterBlocker(true); // Block shooter
+            setShooterBlocker(); // Block shooter
             transitionToState(LaunchState.IDLE);
         }
     }
@@ -261,7 +262,7 @@ public class LaunchSequenceController {
      * Prepares hardware for launch sequence.
      */
     private void prepareForLaunch() {
-        setShooterBlocker(false); // Unblock shooter
+        setShooterBlocker();
     }
     
     /**
@@ -279,11 +280,22 @@ public class LaunchSequenceController {
     /**
      * Controls the shooter blocker position.
      */
-    private void setShooterBlocker(boolean blocked) {
-        double position = blocked 
-            ? Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION
-            : Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION;
-        turret.setShooterBlockerPosition(position);
+    private void setShooterBlocker() {
+        if(shooterBlocked)
+        {
+            turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+        }
+        else
+        {
+            turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+        }
+
+        stateTimer.reset();
+        while(stateTimer.milliseconds() < 150){
+            int x = 1;
+            x = x +1;
+        }
+        shooterBlocked = !shooterBlocked;
     }
     
     // =================================================================================

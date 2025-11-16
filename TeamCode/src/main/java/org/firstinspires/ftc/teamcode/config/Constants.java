@@ -54,8 +54,8 @@ public class Constants {
         // Speed for turret rotation (0.0 to 1.0)
         public static final double TURRET_SPEED = 0.6;
         // Servo positions for shooterBlocker Servo
-        public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.0;
-        public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.45;
+        public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.45;
+        public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.0;
 
         // Encoder and Gear Ratio for Turret Angle Calculation
         // This is for a goBILDA 5202 series motor. Change if you use a different motor.

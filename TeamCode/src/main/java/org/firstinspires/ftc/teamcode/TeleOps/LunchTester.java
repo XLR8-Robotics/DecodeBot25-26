@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.pedropathing.Constants;
+import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
 @TeleOp(name = "Lunch thing", group = "Game")
@@ -16,6 +16,7 @@ public class LunchTester extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         robot = new Robot(hardwareMap, true);
+        robot.turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
 
         telemetry.addData("Status", "Manual Control Initialized");
         telemetry.addData("Mode", "Pure Manual - No Launch Sequence");
