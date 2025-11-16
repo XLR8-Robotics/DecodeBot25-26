@@ -94,7 +94,7 @@ public class LaunchSequenceController {
         }
         
         transitionToState(LaunchState.SPOOLING);
-        configureShooting();
+        //configureShooting();
         prepareForLaunch();
         return true;
     }

@@ -107,7 +107,7 @@ public class Constants {
      */
     public static class ShooterConfig {
         // Shooter wheel speeds (0.0 to 1.0) - better naming
-        public static final double SHOOTER_SPEED_HIGH = 0.85;
+        public static final double SHOOTER_SPEED_HIGH = 0.5;
         public static final double SHOOTER_SPEED_MEDIUM_HIGH = 0.8;
         public static final double SHOOTER_SPEED_MEDIUM = 0.75;
         public static final double SHOOTER_SPEED_LOW = 0.70;

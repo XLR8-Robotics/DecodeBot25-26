@@ -34,13 +34,7 @@ public class Shooter {
     // Manual control variables
     private final List<Double> hoodPositions = Arrays.asList(
             Constants.ShooterConfig.HOOD_MIN,
-            Constants.ShooterConfig.HOOD_POS_2,
-            Constants.ShooterConfig.HOOD_POS_3,
-            Constants.ShooterConfig.HOOD_POS_4,
             Constants.ShooterConfig.HOOD_CENTER,
-            Constants.ShooterConfig.HOOD_POS_6,
-            Constants.ShooterConfig.HOOD_POS_7,
-            Constants.ShooterConfig.HOOD_POS_8,
             Constants.ShooterConfig.HOOD_MAX
     );
     private int currentHoodPositionIndex = 4; // Start at center position (index 4)
