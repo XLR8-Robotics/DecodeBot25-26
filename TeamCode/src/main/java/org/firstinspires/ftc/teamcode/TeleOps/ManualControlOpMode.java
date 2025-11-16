@@ -25,8 +25,7 @@ public class ManualControlOpMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize the robot in legacy mode (no enhanced aiming)
-        robot = new Robot();
-        robot.init(hardwareMap);
+        robot = new Robot(hardwareMap);
 
         telemetry.addData("Status", "Manual Control Initialized");
         telemetry.addData("Mode", "Pure Manual - No Launch Sequence");

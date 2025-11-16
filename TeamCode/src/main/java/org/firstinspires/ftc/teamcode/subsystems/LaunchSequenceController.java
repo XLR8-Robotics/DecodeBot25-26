@@ -6,25 +6,26 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.utils.ShooterTable;
 
 /**
- * Dedicated controller for managing the automated launch sequence.
- * Provides a clean state machine implementation with clear separation of concerns.
+ * Manages the entire launch sequence from start to finish.
+ * This class is a state machine that progresses through the different
+ * stages of launching a projectile.
  */
 public class LaunchSequenceController {
-    
+
     // =================================================================================
-    // STATE DEFINITIONS
+    // LAUNCH SEQUENCE STATES
     // =================================================================================
     
     /**
-     * Launch sequence states with clear documentation.
+     * Defines the possible states of the launch sequence.
      */
     public enum LaunchState {
-        IDLE("Ready to start launch sequence"),
-        SPOOLING("Shooter spinning up to speed"),
-        FEEDING("Intake feeding projectile to shooter"),
-        LIFTING("Lift servo moving projectile into position"),
-        FINISHING("Sequence complete, cleaning up"),
-        CANCELLED("Sequence cancelled, reversing intake");
+        IDLE("Idle"),
+        SPOOLING("Spooling up"),
+        FEEDING("Feeding projectile"),
+        LIFTING("Lifting projectile"),
+        FINISHING("Finishing"),
+        CANCELLED("Cancelled");
         
         private final String description;
         
@@ -38,14 +39,14 @@ public class LaunchSequenceController {
     }
     
     // =================================================================================
-    // SUBSYSTEM REFERENCES
+    // DEPENDENCIES
     // =================================================================================
     
     private final Intake intake;
     private final Shooter shooter;
     private final Turret turret;
     private final Limelight limelight;
-    private final BasicDriveTrain driveTrain;
+    final BasicDriveTrain driveTrain;
     
     // =================================================================================
     // STATE VARIABLES
@@ -94,7 +95,6 @@ public class LaunchSequenceController {
         }
         
         transitionToState(LaunchState.SPOOLING);
-        //configureShooting();
         prepareForLaunch();
         return true;
     }
@@ -255,23 +255,6 @@ public class LaunchSequenceController {
     private void transitionToState(LaunchState newState) {
         currentState = newState;
         stateTimer.reset();
-    }
-    
-    /**
-     * Configures shooter parameters based on current limelight data.
-     */
-    private void configureShooting() {
-        if (limelight.hasTarget()) {
-            // Use distance-based shooting parameters
-            double distance = limelight.getDistanceToTarget();
-            ShooterTable.ShotParams shot = ShooterTable.getInterpolatedShot(distance);
-            shooter.setPower(shot.power);
-            shooter.setHoodPosition(shot.hood);
-        } else {
-            // Use default parameters
-            shooter.setPower(Constants.ShooterConfig.SHOOTER_SPEED);
-            shooter.setHoodPosition(Constants.ShooterConfig.HOOD_CENTER);
-        }
     }
     
     /**

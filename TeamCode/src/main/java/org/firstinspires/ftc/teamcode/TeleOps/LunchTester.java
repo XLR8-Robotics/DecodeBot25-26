@@ -15,8 +15,7 @@ public class LunchTester extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        robot = new Robot(Constants.createFollower(hardwareMap));
-        robot.init(hardwareMap, Robot.AimingMode.LEGACY, Robot.ShootingMode.MANUAL);
+        robot = new Robot(hardwareMap, true);
 
         telemetry.addData("Status", "Manual Control Initialized");
         telemetry.addData("Mode", "Pure Manual - No Launch Sequence");

@@ -81,95 +81,23 @@ public class Robot {
      * Default constructor for backward compatibility.
      * Uses legacy aiming mode with basic PID control.
      */
-    public Robot() {
-        this.currentAimingMode = AimingMode.LEGACY;
-    }
-    
-    /**
-     * Enhanced constructor with pedropathing integration.
-     * @param follower The pedropathing Follower for odometry and motion control
-     */
-    public Robot(Follower follower) {
-        this.follower = follower;
-        this.currentAimingMode = AimingMode.ENHANCED;
-    }
-    
-    /**
-     * Legacy initialization method for backward compatibility.
-     * Initializes all subsystems without advanced aiming.
-     * @param hardwareMap The hardware map from the OpMode
-     */
-    public void init(HardwareMap hardwareMap) {
-        init(hardwareMap, AimingMode.LEGACY);
-    }
-    
-    /**
-     * Enhanced initialization method with aiming mode selection.
-     * @param hardwareMap The hardware map from the OpMode
-     * @param aimingMode The aiming system mode to use
-     */
-    public void init(HardwareMap hardwareMap, AimingMode aimingMode) {
-        init(hardwareMap, aimingMode, ShootingMode.MANUAL);
-    }
-    
-    /**
-     * Complete initialization method with both aiming and shooting mode selection.
-     * @param hardwareMap The hardware map from the OpMode
-     * @param aimingMode The aiming system mode to use
-     * @param shootingMode The shooting system mode to use
-     */
-    public void init(HardwareMap hardwareMap, AimingMode aimingMode, ShootingMode shootingMode) {
-        // Initialize basic subsystems
-        intake = new Intake(hardwareMap);
-        shooter = new Shooter(hardwareMap);
-        turret = new Turret(hardwareMap);
-        limelight = new Limelight(hardwareMap);
-        basicDriveTrain = new BasicDriveTrain(hardwareMap);
-        
-        // Initialize launch sequence controller (always available)
-        launchSequenceController = new LaunchSequenceController(
-            intake, shooter, turret, limelight, basicDriveTrain);
-        
-        // Set modes
-        this.currentAimingMode = aimingMode;
-        this.currentShootingMode = shootingMode;
-        
-        // Initialize enhanced aiming system if requested and follower is available
-        if (aimingMode == AimingMode.ENHANCED && follower != null) {
-            aimingController = new AimingController(turret, limelight, follower);
-        }
-        
-        // Initialize automatic shooting system if requested
-        if (shootingMode == ShootingMode.AUTOMATIC) {
-            shootingController = new ShootingController(shooter, limelight);
-        }
-    }
-    
-    /**
-     * Complete initialization method for enhanced mode.
-     * @param hardwareMap The hardware map from the OpMode
-     * @param follower The pedropathing Follower for odometry
-     */
-    public void init(HardwareMap hardwareMap, Follower follower) {
-        this.follower = follower;
-        init(hardwareMap, AimingMode.ENHANCED, ShootingMode.MANUAL);
-    }
-    
-    /**
-     * Complete initialization method for enhanced mode with automatic shooting.
-     * @param hardwareMap The hardware map from the OpMode
-     * @param follower The pedropathing Follower for odometry
-     * @param shootingMode The shooting system mode to use
-     */
-    public void init(HardwareMap hardwareMap, Follower follower, ShootingMode shootingMode) {
-        this.follower = follower;
-        init(hardwareMap, AimingMode.ENHANCED, shootingMode);
+    public Robot(HardwareMap hardwareMap) {
+        this.basicDriveTrain = new BasicDriveTrain(hardwareMap);
+        this.intake = new Intake(hardwareMap);
+        this.shooter = new Shooter(hardwareMap);
+        this.turret = new Turret(hardwareMap);
+        this.limelight = new Limelight(hardwareMap);
     }
 
-    // =================================================================================
-    // PUBLIC UPDATE METHODS
-    // =================================================================================
+    public Robot (HardwareMap hardwareMap, boolean useEnhancedAiming) {
+        this.basicDriveTrain = new BasicDriveTrain(hardwareMap);
+        this.intake = new Intake(hardwareMap);
+        this.shooter = new Shooter(hardwareMap);
+        this.turret = new Turret(hardwareMap);
+        this.limelight = new Limelight(hardwareMap);
 
+        this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight, basicDriveTrain);
+    }
     /**
      * Main update method with launch sequence support.
      * Use this when you want the launch sequence functionality.
