@@ -53,6 +53,7 @@ public class Turret {
         // Reset the encoder and set the motor to run using encoders.
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Start with the shooter blocker in the blocking position
         setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
@@ -243,6 +244,10 @@ public class Turret {
         double revolutions = ticks / Constants.TurretConfig.TURRET_TICKS_PER_REV;
         double turretRotations = revolutions / Constants.TurretConfig.TURRET_GEAR_RATIO;
         return turretRotations * 360;
+    }
+
+    public int getEncoderTicks() {
+        return turretMotor.getCurrentPosition();
     }
 
     /**

@@ -111,6 +111,7 @@ public class Constants {
         public static final double SHOOTER_SPEED_MEDIUM_HIGH = 0.8;
         public static final double SHOOTER_SPEED_MEDIUM = 0.75;
         public static final double SHOOTER_SPEED_LOW = 0.70;
+        public static final double SHOOTER_SPEED_IDLE = 0.2;
         
         // Default shooter speed for fallback
         public static final double SHOOTER_SPEED = SHOOTER_SPEED_HIGH;

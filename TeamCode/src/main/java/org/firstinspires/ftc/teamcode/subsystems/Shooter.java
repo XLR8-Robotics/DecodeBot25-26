@@ -26,7 +26,8 @@ public class Shooter {
     }
     private final DcMotorEx shooterMotor;
     private final Servo hoodServo;
-    private boolean isRunning;
+    private boolean isRunning, isIdle;
+
     
     // State management
     private ShooterState currentState = ShooterState.MANUAL;
@@ -55,6 +56,8 @@ public class Shooter {
         this.shooterMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.SHOOTER_MOTOR);
         this.hoodServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.HOOD_SERVO);
         this.isRunning = false;
+        this.isIdle = false;
+
 
         // Set initial hood position
         setHoodPosition(hoodPositions.get(currentHoodPositionIndex));
@@ -382,7 +385,12 @@ public class Shooter {
         previousDpadUpState = currentDpadUpState;
         previousDpadDownState = currentDpadDownState;
     }
-    
+    public void initializeIdleSpeed(){
+        if(!isIdle) {
+            setPower(Constants.ShooterConfig.SHOOTER_SPEED_IDLE);
+            isIdle = true;
+        }
+    }
     /**
      * Legacy update method for backward compatibility.
      * Simply calls manualUpdate() to maintain existing functionality.

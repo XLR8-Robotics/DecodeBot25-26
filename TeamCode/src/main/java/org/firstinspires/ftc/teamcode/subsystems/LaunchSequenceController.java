@@ -196,8 +196,8 @@ public class LaunchSequenceController {
      * Handles the SPOOLING state - waiting for shooter to reach speed.
      */
     private void updateSpoolingState() {
-        shooter.setPower(0.5);
-        if (stateTimer.milliseconds() >= 1000) {
+        shooter.setPower(0.40);
+        if (stateTimer.milliseconds() >= 750) {
             transitionToState(LaunchState.FEEDING);
         }
     }
