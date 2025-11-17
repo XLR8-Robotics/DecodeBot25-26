@@ -87,30 +87,16 @@ public class Robot {
         this.shooter = new Shooter(hardwareMap);
         this.turret = new Turret(hardwareMap);
         this.limelight = new Limelight(hardwareMap);
-    }
-
-    public Robot (HardwareMap hardwareMap, boolean useEnhancedAiming) {
-        this.basicDriveTrain = new BasicDriveTrain(hardwareMap);
-        this.intake = new Intake(hardwareMap);
-        this.shooter = new Shooter(hardwareMap);
-        this.turret = new Turret(hardwareMap);
-        this.limelight = new Limelight(hardwareMap);
-
         this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight, basicDriveTrain);
     }
+
     /**
      * Main update method with launch sequence support.
      * Use this when you want the launch sequence functionality.
      */
     public void update(Gamepad gamepad) {
         limelight.update();
-        
-        // Update automatic shooting system if enabled
-        if (shootingController != null) {
-            shootingController.update();
-        }
 
-        // Update launch sequence controller
         launchSequenceController.update(gamepad);
 
         // If the launch sequence is not active, allow manual control.
@@ -118,22 +104,6 @@ public class Robot {
             updateDrivetrainControl(gamepad);
             updateSubsystemsManualControl(gamepad);
         }
-    }
-
-    /**
-     * Pure manual control update method - NO launch sequence.
-     * Use this for simple manual control without automated sequences.
-     */
-    public void manualUpdate(Gamepad gamepad) {
-        limelight.update();
-        
-        // Update automatic shooting system if enabled
-        if (shootingController != null) {
-            shootingController.update();
-        }
-        
-        updateDrivetrainControl(gamepad);
-        updateSubsystemsManualControl(gamepad);
     }
 
     // =================================================================================

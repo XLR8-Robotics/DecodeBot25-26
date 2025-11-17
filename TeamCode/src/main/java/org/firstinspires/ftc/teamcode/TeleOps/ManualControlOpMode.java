@@ -35,10 +35,7 @@ public class ManualControlOpMode extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Use pure manual update - no launch sequence interference
-            robot.manualUpdate(gamepad1);
-
-            // Display organized telemetry
+            robot.update(gamepad1);
             displayTelemetry();
         }
     }

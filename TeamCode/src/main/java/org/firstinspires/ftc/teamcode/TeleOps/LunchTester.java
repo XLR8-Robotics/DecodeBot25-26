@@ -15,7 +15,7 @@ public class LunchTester extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        robot = new Robot(hardwareMap, true);
+        robot = new Robot(hardwareMap);
         robot.turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
 
         telemetry.addData("Status", "Manual Control Initialized");
