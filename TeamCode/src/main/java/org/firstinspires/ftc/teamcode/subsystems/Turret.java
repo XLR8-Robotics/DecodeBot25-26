@@ -169,19 +169,16 @@ public class Turret {
         }
         
         double turretPower = 0;
-        if (gamepad.left_bumper) {
-            turretPower = -Constants.TurretConfig.TURRET_SPEED;
-        } else if (gamepad.right_bumper) {
+
+        if (gamepad.left_bumper && !isLeftLimitPressed()) {
             turretPower = Constants.TurretConfig.TURRET_SPEED;
+        } else if (gamepad.right_bumper && !isRightLimitPressed()) {
+            turretPower = -Constants.TurretConfig.TURRET_SPEED;
+        } else {
+            turretPower = 0;
         }
 
-        // Apply limit switch logic
-        if (isLeftLimitPressed() && turretPower < 0) {
-            turretPower = 0;
-        }
-        if (isRightLimitPressed() && turretPower > 0) {
-            turretPower = 0;
-        }
+
 
         setPower(turretPower);
 

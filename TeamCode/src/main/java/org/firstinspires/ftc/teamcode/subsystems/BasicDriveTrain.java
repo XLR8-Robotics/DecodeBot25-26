@@ -23,8 +23,10 @@ public class BasicDriveTrain {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
-        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public void setDrivePowers(double leftFrontPower, double leftBackPower, double rightBackPower, double rightFrontPower) {
@@ -46,11 +48,24 @@ public class BasicDriveTrain {
     }
 
     public void drive(double forward, double strafe, double turn) {
-        double leftFrontPower = forward + strafe + turn;
-        double leftBackPower = forward - strafe + turn;
-        double rightFrontPower = forward - strafe - turn;
-        double rightBackPower = forward + strafe - turn;
+        double leftFrontPower = forward + strafe - turn;
+        double leftBackPower = forward - strafe - turn;
+        double rightFrontPower = forward - strafe + turn;
+        double rightBackPower = forward + strafe + turn;
 
         setDrivePowers(leftFrontPower, leftBackPower, rightBackPower, rightFrontPower);
+    }
+
+    /**
+     * Returns the current power of the drivetrain motors.
+     * @return An array of doubles containing the power of each motor in the order: [leftFront, rightFront, leftBack, rightBack]
+     */
+    public double[] getMotorPowers() {
+        return new double[]{
+            leftFront.getPower(),
+            rightFront.getPower(),
+            leftBack.getPower(),
+            rightBack.getPower()
+        };
     }
 }

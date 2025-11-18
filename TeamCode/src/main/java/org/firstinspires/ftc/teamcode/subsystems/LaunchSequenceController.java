@@ -273,7 +273,7 @@ public class LaunchSequenceController {
             driveTrain.drive(0, 0, 0);
         }
         intake.setPower(0);
-        shooter.setPower(0);
+        shooter.initializeIdleSpeed();
         turret.setPower(0);
     }
     

@@ -353,15 +353,13 @@ public class Shooter {
      */
     public void manualUpdate(Gamepad gamepad) {
         // --- Shooter Motor Control ---
-        if (gamepad.cross && isInitialized)
-            setPower(Constants.ShooterConfig.SHOOTER_SPEED);
 
         boolean currentTriangleButtonState = gamepad.triangle;
         if(currentTriangleButtonState && !previousTriangleButtonState) {
             isInitialized = !isInitialized;
 
             if (isInitialized) {
-                setPower(0.5);
+                initializeIdleSpeed();
             } else {
                 setPower(0);
             }

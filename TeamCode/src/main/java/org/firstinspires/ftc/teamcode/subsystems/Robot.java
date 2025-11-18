@@ -90,10 +90,7 @@ public class Robot {
         this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight, basicDriveTrain);
     }
 
-    /**
-     * Main update method with launch sequence support.
-     * Use this when you want the launch sequence functionality.
-     */
+
     public void update(Gamepad gamepad) {
         limelight.update();
 
@@ -115,9 +112,10 @@ public class Robot {
      * @param gamepad The gamepad to read input from
      */
     private void updateDrivetrainControl(Gamepad gamepad) {
-        double forward = -gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-        double strafe = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
-        double turn = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        // Standard mecanum drive control: left stick for translation, right stick for rotation
+        double forward = gamepad.left_stick_y * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double strafe = gamepad.right_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
+        double turn = gamepad.left_stick_x * Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER;
         basicDriveTrain.drive(forward, strafe, turn);
     }
     
@@ -165,7 +163,7 @@ public class Robot {
         if (launchSequenceController != null) {
             launchSequenceController.emergencyStop();
         } else {
-            // Fallback for when controller isn't initialized yet
+            // Fallback for when controller isn'''t initialized yet
             basicDriveTrain.drive(0, 0, 0);
             if (intake != null) intake.setPower(0);
             if (shooter != null) shooter.setPower(0);
@@ -269,7 +267,7 @@ public class Robot {
             currentShootingMode = shootingMode;
             
             if (shootingMode == ShootingMode.AUTOMATIC && shootingController == null) {
-                // Create shooting controller if it doesn't exist
+                // Create shooting controller if it doesn'''t exist
                 shootingController = new ShootingController(shooter, limelight);
             }
             

@@ -52,7 +52,7 @@ public class Constants {
      */
     public static class TurretConfig {
         // Speed for turret rotation (0.0 to 1.0)
-        public static final double TURRET_SPEED = 0.6;
+        public static final double TURRET_SPEED = 0.3;
         // Servo positions for shooterBlocker Servo
         public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.45;
         public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.0;
@@ -117,7 +117,7 @@ public class Constants {
         public static final double SHOOTER_SPEED = SHOOTER_SPEED_HIGH;
 
         // Hood servo positions (0.0 to 1.0)
-        public static final double HOOD_MAX = 0.75;
+        public static final double HOOD_MAX = 0.55;
         public static final double HOOD_POSITION_8 = 0.6875;
         public static final double HOOD_POSITION_7 = 0.625;
         public static final double HOOD_POSITION_6 = 0.5625;
