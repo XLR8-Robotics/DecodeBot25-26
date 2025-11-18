@@ -48,10 +48,10 @@ public class BasicDriveTrain {
     }
 
     public void drive(double forward, double strafe, double turn) {
-        double leftFrontPower = forward + strafe - turn;
-        double leftBackPower = forward - strafe - turn;
-        double rightFrontPower = forward - strafe + turn;
-        double rightBackPower = forward + strafe + turn;
+        double leftFrontPower  = forward + strafe + turn;
+        double rightFrontPower = forward - strafe - turn;
+        double leftBackPower   = forward - strafe + turn;
+        double rightBackPower  = forward + strafe - turn;
 
         setDrivePowers(leftFrontPower, leftBackPower, rightBackPower, rightFrontPower);
     }
