@@ -238,10 +238,12 @@ public class Constants {
      */
     public static class LaunchSequenceConfig {
         // Time in milliseconds for the shooter to spin up to speed.
-        public static final long SHOOTER_SPIN_UP_TIME_MS = 2000; // 2 seconds
+        public static final long SHOOTER_SPIN_UP_TIME_MS = 800; // 2 seconds
+
+         public static final double SHOOTER_POWER = 0.30;
 
         // Time in milliseconds for the intake to run in reverse when cancelled.
-        public static final long INTAKE_REVERSE_TIME_MS = 1000; // 1 second
+        public static final long INTAKE_REVERSE_TIME_MS = 1500; // 1 second
 
         // The time window in milliseconds to detect a triple press of the cancel button.
         public static final long TRIPLE_PRESS_TIMEOUT_MS = 500; // 0.5 seconds
@@ -250,7 +252,7 @@ public class Constants {
         public static final long SINGLE_PRESS_TIMEOUT_MS = 200;
         
         // Time for lift servo to stay in lifting position during sequence
-        public static final long LIFT_SERVO_HOLD_TIME_MS = 500;
+        public static final long LIFT_SERVO_HOLD_TIME_MS = 650;
         
         // Number of cross button presses needed to cancel launch sequence
         public static final int TRIPLE_PRESS_COUNT = 3;

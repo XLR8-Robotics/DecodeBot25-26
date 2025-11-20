@@ -356,17 +356,10 @@ public class Shooter {
 
         boolean currentTriangleButtonState = gamepad.triangle;
         if(currentTriangleButtonState && !previousTriangleButtonState) {
-            isInitialized = !isInitialized;
-
-            if (isInitialized) {
-                initializeIdleSpeed();
-            } else {
-                setPower(0);
-            }
+            initializeIdleSpeed(!isRunning);
         }
         previousTriangleButtonState = currentTriangleButtonState;
 
-        // --- Hood Control ---
         boolean currentDpadUpState = gamepad.dpad_down;
         boolean currentDpadDownState = gamepad.dpad_up;
 
@@ -383,11 +376,17 @@ public class Shooter {
         previousDpadUpState = currentDpadUpState;
         previousDpadDownState = currentDpadDownState;
     }
-    public void initializeIdleSpeed(){
-        if(!isIdle) {
+    public void initializeIdleSpeed(Boolean setIdleSpeed){
+        if(setIdleSpeed)
+        {
             setPower(Constants.ShooterConfig.SHOOTER_SPEED_IDLE);
-            isIdle = true;
         }
+        if(!setIdleSpeed)
+        {
+            setPower(0);
+        }
+
+        isRunning = setIdleSpeed;
     }
     /**
      * Legacy update method for backward compatibility.
@@ -427,63 +426,6 @@ public class Shooter {
         return hoodServo.getPosition();
     }
 
-    public boolean isRunning() {
-        return isRunning;
-    }
-    
-    /**
-     * Gets the current target distance for automatic shooting.
-     * @return The target distance in inches
-     */
-    public double getTargetDistance() {
-        return targetDistance;
-    }
-    
-    /**
-     * Gets the calculated shooter power for the current distance.
-     * @return The calculated power value
-     */
-    public double getCalculatedPower() {
-        return calculatedPower;
-    }
-    
-    /**
-     * Gets the calculated hood position for the current distance.
-     * @return The calculated hood position value
-     */
-    public double getCalculatedHoodPosition() {
-        return calculatedHoodPosition;
-    }
-    
-    /**
-     * Gets the calculated shooter RPM for the current distance.
-     * @return The calculated RPM value, or -1 if RPM control is not enabled
-     */
-    public double getCalculatedRPM() {
-        return calculatedRPM;
-    }
-    
-    /**
-     * Checks if RPM control is enabled.
-     * @return true if using RPM control, false if using power control
-     */
-    public boolean isRPMControlEnabled() {
-        return rpmControlEnabled;
-    }
-    
-    /**
-     * Sets whether to use RPM control or power control.
-     * @param enabled true to enable RPM control, false for power control
-     */
-    public void setRPMControlEnabled(boolean enabled) {
-        if (rpmControlEnabled != enabled) {
-            rpmControlEnabled = enabled;
-            if (enabled) {
-                setupVelocityControl();
-            }
-        }
-    }
-    
     /**
      * Checks if the automatic shooting parameters are ready.
      * @return true if distance has been set and parameters calculated

@@ -24,7 +24,6 @@ public class LunchTester extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-        robot.shooter.initializeIdleSpeed();
         while (opModeIsActive()) {
             robot.launchSequenceController.update(gamepad1);
 

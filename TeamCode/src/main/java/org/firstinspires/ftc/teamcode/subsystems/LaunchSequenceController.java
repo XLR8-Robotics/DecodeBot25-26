@@ -196,8 +196,8 @@ public class LaunchSequenceController {
      * Handles the SPOOLING state - waiting for shooter to reach speed.
      */
     private void updateSpoolingState() {
-        shooter.setPower(0.40);
-        if (stateTimer.milliseconds() >= 750) {
+        shooter.setPower(Constants.LaunchSequenceConfig.SHOOTER_POWER);
+        if (stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS) {
             transitionToState(LaunchState.FEEDING);
         }
     }
@@ -207,7 +207,7 @@ public class LaunchSequenceController {
      */
     private void updateFeedingState() {
         intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-        if(stateTimer.milliseconds() > 1500){
+        if(stateTimer.milliseconds() > Constants.LaunchSequenceConfig.INTAKE_REVERSE_TIME_MS){
             transitionToState(LaunchState.LIFTING);
         }
     }
@@ -273,7 +273,7 @@ public class LaunchSequenceController {
             driveTrain.drive(0, 0, 0);
         }
         intake.setPower(0);
-        shooter.initializeIdleSpeed();
+        shooter.initializeIdleSpeed(true);
         turret.setPower(0);
     }
     
