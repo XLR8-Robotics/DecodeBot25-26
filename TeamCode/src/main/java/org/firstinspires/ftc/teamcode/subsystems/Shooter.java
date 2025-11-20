@@ -367,8 +367,8 @@ public class Shooter {
         previousTriangleButtonState = currentTriangleButtonState;
 
         // --- Hood Control ---
-        boolean currentDpadUpState = gamepad.dpad_up;
-        boolean currentDpadDownState = gamepad.dpad_down;
+        boolean currentDpadUpState = gamepad.dpad_down;
+        boolean currentDpadDownState = gamepad.dpad_up;
 
         if (currentDpadUpState && !previousDpadUpState) {
             // Move to the next hood position

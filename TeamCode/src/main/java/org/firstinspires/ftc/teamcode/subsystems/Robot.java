@@ -114,7 +114,7 @@ public class Robot {
     private void updateDrivetrainControl(Gamepad gamepad) {
         // Standard mecanum drive control: left stick for translation, right stick for rotation
 
-        basicDriveTrain.drive(gamepad.left_stick_y, gamepad.left_stick_x, gamepad.right_stick_x, Constants.DrivetrainConfig.DRIVE_SPEED_MULTIPLIER);
+        basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);
     }
     
     /**
@@ -162,7 +162,7 @@ public class Robot {
             launchSequenceController.emergencyStop();
         } else {
             // Fallback for when controller isn'''t initialized yet
-            basicDriveTrain.drive(0, 0, 0, 0);
+            basicDriveTrain.drive(0, 0, 0);
             if (intake != null) intake.setPower(0);
             if (shooter != null) shooter.setPower(0);
             if (turret != null) turret.setPower(0);
