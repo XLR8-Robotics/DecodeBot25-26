@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
 
@@ -47,15 +48,35 @@ public class BasicDriveTrain {
         rightFront.setPower(rightFrontPower);
     }
 
-    public void drive(double forward, double strafe, double turn) {
-        double leftFrontPower = forward + strafe - turn;
-        double leftBackPower = forward - strafe - turn;
-        double rightFrontPower = forward - strafe + turn;
-        double rightBackPower = forward + strafe + turn;
 
-        setDrivePowers(leftFrontPower, leftBackPower, rightBackPower, rightFrontPower);
+    public void drive(double drive, double strafe, double rotate, double speedModifier) {
+        // Ensure that joystick inputs are within the correct range (-1.0 to 1.0)
+        drive = Range.clip(drive, -1.0, 1.0);
+        strafe = Range.clip(strafe, -1.0, 1.0);
+        rotate = Range.clip(rotate, -1.0, 1.0);
+
+        // Apply the mecanum drive formula to calculate the power for each motor
+        double frontLeftPower = drive + strafe + rotate;
+        double frontRightPower = drive - strafe - rotate;
+        double backLeftPower = drive - strafe + rotate;
+        double backRightPower = drive + strafe - rotate;
+
+        // Normalize the values to prevent them from exceeding the motor's maximum power
+        double maxPower = Math.max(Math.abs(frontLeftPower), Math.max(Math.abs(frontRightPower),
+                Math.max(Math.abs(backLeftPower), Math.abs(backRightPower))));
+
+        if (maxPower > 1.0) {
+            frontLeftPower /= maxPower;
+            frontRightPower /= maxPower;
+            backLeftPower /= maxPower;
+            backRightPower /= maxPower;
+        }
+
+        leftFront.setPower(frontLeftPower * speedModifier);
+        rightFront.setPower(frontRightPower * speedModifier);
+        leftBack.setPower(backLeftPower * speedModifier);
+        rightBack.setPower(backRightPower * speedModifier);
     }
-
     /**
      * Returns the current power of the drivetrain motors.
      * @return An array of doubles containing the power of each motor in the order: [leftFront, rightFront, leftBack, rightBack]

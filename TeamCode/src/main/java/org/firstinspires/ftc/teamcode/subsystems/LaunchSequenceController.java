@@ -270,7 +270,7 @@ public class LaunchSequenceController {
      */
     private void stopAllMotors() {
         if (driveTrain != null) {
-            driveTrain.drive(0, 0, 0);
+            driveTrain.drive(0, 0, 0,0);
         }
         intake.setPower(0);
         shooter.initializeIdleSpeed();
