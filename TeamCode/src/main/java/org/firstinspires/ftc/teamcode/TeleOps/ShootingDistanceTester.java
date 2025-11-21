@@ -2,9 +2,7 @@ package org.firstinspires.ftc.teamcode.TeleOps;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
@@ -14,11 +12,11 @@ public class ShootingDistanceTester extends LinearOpMode {
     private Robot robot;
     
     // Manual control variables
-    private double currentShooterPower = 0.5; // Starting power
+    private double currentShooterRPM = 2000.0; // Starting RPM
     private double currentHoodPosition = 0.5; // Starting position (mid-range)
     
     // Increment values for fine-tuning
-    private static final double POWER_INCREMENT = 0.01;
+    private static final double RPM_INCREMENT = 50.0;
     private static final double HOOD_INCREMENT = 0.01;
     
     // Button state tracking for toggle behavior
@@ -40,7 +38,7 @@ public class ShootingDistanceTester extends LinearOpMode {
         robot.turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
 
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("Controls", "Dpad Up/Down: Power (+/- 0.01)");
+        telemetry.addData("Controls", "Dpad Up/Down: RPM (+/- " + RPM_INCREMENT + ")");
         telemetry.addData("Controls", "Dpad Right/Left: Hood Position (+/- 0.01)");
         telemetry.addData("Controls", "Hold Cross: Run Shooter");
         telemetry.addData("Controls", "R2/L2: Intake In/Out");
@@ -52,15 +50,15 @@ public class ShootingDistanceTester extends LinearOpMode {
         while (opModeIsActive()) {
             // --- Manual Control Logic ---
             
-            // 1. Adjust Shooter Power Target (Dpad Up/Down)
+            // 1. Adjust Shooter RPM Target (Dpad Up/Down)
             if (gamepad1.dpad_up && !previousDpadUp) {
-                currentShooterPower += POWER_INCREMENT;
+                currentShooterRPM += RPM_INCREMENT;
             } else if (gamepad1.dpad_down && !previousDpadDown) {
-                currentShooterPower -= POWER_INCREMENT;
+                currentShooterRPM -= RPM_INCREMENT;
             }
             
-            // Clamp power between 0.0 and 1.0
-            currentShooterPower = Math.max(0.0, Math.min(1.0, currentShooterPower));
+            // Clamp RPM between 0.0 and MAX
+            currentShooterRPM = Math.max(0.0, Math.min(Constants.AutoShootingConfig.MAX_SHOOTER_RPM, currentShooterRPM));
             
             // 2. Adjust Hood Position Target (Dpad Right/Left)
             if (gamepad1.dpad_right && !previousDpadRight) {
@@ -77,9 +75,9 @@ public class ShootingDistanceTester extends LinearOpMode {
             
             // 4. Run Shooter Motor (Hold Cross)
             if (gamepad1.cross) {
-                robot.shooter.setPower(currentShooterPower);
+                robot.shooter.setRPM(currentShooterRPM);
             } else {
-                robot.shooter.setPower(0);
+                robot.shooter.setRPM(0);
             }
 
             // 5. Intake Control (R2 = In, L2 = Out)
@@ -122,7 +120,7 @@ public class ShootingDistanceTester extends LinearOpMode {
      */
     private void displayTelemetry() {
         telemetry.addData("=== SHOOTER CONTROLS ===", "");
-        telemetry.addData("Target Power", "%.2f", currentShooterPower);
+        telemetry.addData("Target RPM", "%.0f", currentShooterRPM);
         telemetry.addData("Target Hood Pos", "%.2f", currentHoodPosition);
         telemetry.addLine();
         
@@ -136,7 +134,8 @@ public class ShootingDistanceTester extends LinearOpMode {
      */
     private void displayMotorAndServoTelemetry() {
         telemetry.addData("=== MOTORS & SERVOS ===", "");
-        telemetry.addData("Shooter Power (Actual)", "%.2f", robot.shooter.getMotorPower());
+        telemetry.addData("Shooter RPM (Actual)", "%.0f", robot.shooter.getCurrentRPM());
+        telemetry.addData("Shooter Power (Applied)", "%.2f", robot.shooter.getMotorPower());
         telemetry.addData("Hood Position (Actual)", "%.2f", robot.shooter.getServoPosition());
         telemetry.addData("Intake Power", "%.2f", robot.intake.getMotorPower());
         telemetry.addData("Lift Servo", isLiftUp ? "UP" : "DOWN");
