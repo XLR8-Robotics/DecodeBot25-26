@@ -55,6 +55,10 @@ public class LaunchSequenceController {
     private LaunchState currentState = LaunchState.IDLE;
     private final ElapsedTime stateTimer = new ElapsedTime();
     private final ButtonPressDetector crossButton = new ButtonPressDetector();
+    
+    // NEW: Detects the Triangle button for toggling idle speed
+    private boolean previousTriangleButtonState = false;
+    private boolean isShooterIdleEnabled = false;
 
     private boolean shooterBlocked = true;
     
@@ -89,12 +93,18 @@ public class LaunchSequenceController {
     
     /**
      * Manually start the launch sequence.
-     * @return true if sequence was started, false if already running
+     * @return true if sequence was started, false if already running or prerequisites not met
      */
     public boolean startSequence() {
         if (currentState != LaunchState.IDLE) {
             return false; // Already running
         }
+
+        // NEW: Check if shooter is spinning (idle enabled)
+        if (!shooter.isRunning()) {
+            return false; // Don't launch if shooter isn't ready/spinning
+        }
+
         prepareForLaunch();
         transitionToState(LaunchState.SPOOLING);
         return true;
@@ -129,6 +139,8 @@ public class LaunchSequenceController {
      * Handles gamepad input for launch sequence control.
      */
     private void handleInput(Gamepad gamepad) {
+        
+        // --- 1. Launch Sequence Inputs (Cross Button) ---
         ButtonPressDetector.PressType pressType = crossButton.update(gamepad.cross);
         
         switch (pressType) {
@@ -142,6 +154,18 @@ public class LaunchSequenceController {
                 // No action needed
                 break;
         }
+
+        // --- 2. Idle Speed Toggle Inputs (Triangle Button) ---
+        // Moved logic from Shooter.java to here as requested
+        boolean currentTriangleButtonState = gamepad.triangle;
+        if(currentTriangleButtonState && !previousTriangleButtonState) {
+            // Toggle idle state locally
+            isShooterIdleEnabled = !isShooterIdleEnabled;
+            
+            // Apply to hardware
+            shooter.initializeIdleSpeed(isShooterIdleEnabled);
+        }
+        previousTriangleButtonState = currentTriangleButtonState;
     }
     
     /**
@@ -196,8 +220,15 @@ public class LaunchSequenceController {
      * Handles the SPOOLING state - waiting for shooter to reach speed.
      */
     private void updateSpoolingState() {
-        shooter.setPower(Constants.LaunchSequenceConfig.SHOOTER_POWER);
-        if (stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS) {
+        shooter.setRPM(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
+        
+        // Check both time and RPM stability if available
+        boolean isTimeElapsed = stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS;
+        boolean isRPMReached = shooter.isRPMStable(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
+        
+        // Transition if time has passed AND (RPM is stable OR we just rely on time)
+        // Currently relying on time as primary, but you can enforce RPM here:
+        if (isTimeElapsed) { 
             transitionToState(LaunchState.FEEDING);
         }
     }
@@ -273,7 +304,14 @@ public class LaunchSequenceController {
             driveTrain.drive(0, 0, 0);
         }
         intake.setPower(0);
-        shooter.initializeIdleSpeed(true);
+        
+        // If idle was enabled before the shot, return to idle. Otherwise stop.
+        if (isShooterIdleEnabled) {
+            shooter.initializeIdleSpeed(true);
+        } else {
+            shooter.setRPM(0);
+        }
+        
         turret.setPower(0);
     }
     

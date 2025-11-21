@@ -113,6 +113,8 @@ public class Constants {
         public static final double SHOOTER_SPEED_LOW = 0.70;
         public static final double SHOOTER_SPEED_IDLE = 0.05;
         
+        public static final double SHOOTER_RPM_IDLE = 1000;
+
         // Default shooter speed for fallback
         public static final double SHOOTER_SPEED = SHOOTER_SPEED_HIGH;
 
@@ -140,7 +142,7 @@ public class Constants {
         // - goBILDA 5202/5203: 537.7 ticks/rev
         // - REV HD Hex Motor: 28 ticks/rev  
         // - AndyMark NeveRest: 1120 ticks/rev (20:1), 560 ticks/rev (40:1)
-        public static final double SHOOTER_MOTOR_TICKS_PER_REV = 537.7; // goBILDA 5202 series (CHANGE THIS!)
+        public static final double SHOOTER_MOTOR_TICKS_PER_REV = 28.0; // goBILDA 5000 series 1:1
         
         // Distance ranges in inches for different shooting zones
         public static final double MIN_SHOOTING_DISTANCE = 12.0; // Minimum safe shooting distance
@@ -194,7 +196,7 @@ public class Constants {
         
         // Safety limits for RPM control
         public static final double MIN_SHOOTER_RPM = 1500;  // Minimum safe RPM
-        public static final double MAX_SHOOTER_RPM = 5000;  // Maximum safe RPM
+        public static final double MAX_SHOOTER_RPM = 6000;  // Maximum safe RPM for 1:1 motor
         
         // Fallback safety limits for power control (if RPM is disabled)
         public static final double MIN_SHOOTER_POWER = 0.60;
@@ -241,6 +243,7 @@ public class Constants {
         public static final long SHOOTER_SPIN_UP_TIME_MS = 800; // 2 seconds
 
          public static final double SHOOTER_POWER = 0.05;
+         public static final double SHOOTER_LAUNCH_RPM = 3500; // Default launch RPM
 
         // Time in milliseconds for the intake to run in reverse when cancelled.
         public static final long INTAKE_REVERSE_TIME_MS = 1500; // 1 second
