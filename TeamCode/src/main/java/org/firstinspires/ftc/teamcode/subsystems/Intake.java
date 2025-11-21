@@ -36,7 +36,7 @@ public class Intake {
         this.liftServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.LIFT_SERVO);
         this.leftDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_LEFT);
         this.rightDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_RIGHT);
-
+        this.liftServo.setPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
         // If the intake runs in the wrong direction, you can reverse it by uncommenting the next line.
         // this.intakeMotor.setDirection(DcMotor.Direction.REVERSE);
     }

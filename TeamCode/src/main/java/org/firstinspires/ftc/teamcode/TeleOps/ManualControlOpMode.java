@@ -83,7 +83,6 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("=== SYSTEM STATUS ===", "");
         telemetry.addData("Launch Sequence", robot.getLaunchSequenceState());
         telemetry.addData("Target Side", robot.getTargetSide().toString());
-        telemetry.addData("Target Tag ID", robot.getCurrentTargetTagId());
         telemetry.addData("Limelight Target", robot.limelight.hasTarget() ? robot.limelight.getFiducialId() : "None");
     }
 }

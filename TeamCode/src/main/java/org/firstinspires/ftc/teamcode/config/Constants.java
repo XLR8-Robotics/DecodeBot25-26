@@ -95,7 +95,7 @@ public class Constants {
     public static class IntakeConfig {
         // Speed for the intake motor (0.0 to 1.0)
         public static final double INTAKE_SPEED = 0.8;
-        public static final double LIFT_SERVO_NOT_LIFTING_POSITION = 0.0;
+        public static final double LIFT_SERVO_NOT_LIFTING_POSITION = 0.05;
         public static final double LIFT_SERVO_LIFTING_POSITION = 0.75;
         // Distance threshold in centimeters for detecting an object
         public static final double INTAKE_DISTANCE_THRESHOLD_CM = 5.0;
@@ -111,7 +111,7 @@ public class Constants {
         public static final double SHOOTER_SPEED_MEDIUM_HIGH = 0.8;
         public static final double SHOOTER_SPEED_MEDIUM = 0.75;
         public static final double SHOOTER_SPEED_LOW = 0.70;
-        public static final double SHOOTER_SPEED_IDLE = 0.2;
+        public static final double SHOOTER_SPEED_IDLE = 0.05;
         
         // Default shooter speed for fallback
         public static final double SHOOTER_SPEED = SHOOTER_SPEED_HIGH;
@@ -240,7 +240,7 @@ public class Constants {
         // Time in milliseconds for the shooter to spin up to speed.
         public static final long SHOOTER_SPIN_UP_TIME_MS = 800; // 2 seconds
 
-         public static final double SHOOTER_POWER = 0.30;
+         public static final double SHOOTER_POWER = 0.05;
 
         // Time in milliseconds for the intake to run in reverse when cancelled.
         public static final long INTAKE_REVERSE_TIME_MS = 1500; // 1 second
