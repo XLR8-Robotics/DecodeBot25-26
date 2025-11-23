@@ -31,7 +31,6 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("Mode", "Pure Manual - No Launch Sequence");
         telemetry.addData("Info", "Press START to begin driving");
         telemetry.update();
-
         waitForStart();
 
         while (opModeIsActive()) {

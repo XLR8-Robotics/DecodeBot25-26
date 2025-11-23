@@ -52,7 +52,7 @@ public class Constants {
      */
     public static class TurretConfig {
         // Speed for turret rotation (0.0 to 1.0)
-        public static final double TURRET_SPEED = 0.3;
+        public static final double TURRET_SPEED = 0.5;
         // Servo positions for shooterBlocker Servo
         public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.45;
         public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.0;
@@ -107,16 +107,12 @@ public class Constants {
      */
     public static class ShooterConfig {
         // Shooter wheel speeds (0.0 to 1.0) - better naming
-        public static final double SHOOTER_SPEED_HIGH = 0.5;
-        public static final double SHOOTER_SPEED_MEDIUM_HIGH = 0.8;
-        public static final double SHOOTER_SPEED_MEDIUM = 0.75;
-        public static final double SHOOTER_SPEED_LOW = 0.70;
-        public static final double SHOOTER_SPEED_IDLE = 0.05;
-        
-        public static final double SHOOTER_RPM_IDLE = 1000;
 
-        // Default shooter speed for fallback
-        public static final double SHOOTER_SPEED = SHOOTER_SPEED_HIGH;
+        
+        public static final double SHOOTER_RPM_IDLE = 2200;
+        public static final double SHOOTER_RPM_NEAR = 2800;
+        public static final double SHOOTER_RPM_MEDIUM = 3100;
+        public static final double SHOOTER_RPM_FAR = 3100;
 
         // Hood servo positions (0.0 to 1.0)
         public static final double HOOD_MAX = 0.55;
@@ -206,10 +202,10 @@ public class Constants {
         
         // Velocity control PID gains (for RPM control)
         // These may need tuning based on your motor and load
-        public static final double VELOCITY_KP = 10.0;  // Proportional gain
-        public static final double VELOCITY_KI = 0.5;   // Integral gain  
+        public static final double VELOCITY_KP = 0.0;  // Proportional gain
+        public static final double VELOCITY_KI = 0.0;   // Integral gain
         public static final double VELOCITY_KD = 0.0;   // Derivative gain
-        public static final double VELOCITY_KF = 12.0;  // Feed-forward gain
+        public static final double VELOCITY_KF = 0.0;  // Feed-forward gain
         
         // Auto-shooting timeouts and delays
         public static final long DISTANCE_MEASUREMENT_TIMEOUT_MS = 100; // Time to wait for stable distance reading

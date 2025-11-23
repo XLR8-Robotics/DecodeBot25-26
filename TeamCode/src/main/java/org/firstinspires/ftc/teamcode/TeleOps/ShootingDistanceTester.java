@@ -45,6 +45,7 @@ public class ShootingDistanceTester extends LinearOpMode {
         telemetry.addData("Controls", "Circle: Toggle Lift Servo");
         telemetry.update();
 
+        robot.shooter.setRPM(800);
         waitForStart();
 
         while (opModeIsActive()) {
@@ -52,20 +53,22 @@ public class ShootingDistanceTester extends LinearOpMode {
             
             // 1. Adjust Shooter RPM Target (Dpad Up/Down)
             if (gamepad1.dpad_up && !previousDpadUp) {
-                currentShooterRPM += RPM_INCREMENT;
+                robot.shooter.setRPM(Constants.ShooterConfig.SHOOTER_RPM_IDLE);
             } else if (gamepad1.dpad_down && !previousDpadDown) {
-                currentShooterRPM -= RPM_INCREMENT;
+                robot.shooter.setRPM(Constants.ShooterConfig.SHOOTER_RPM_NEAR);
+            } else if (gamepad1.dpad_right && !previousDpadRight) {
+                robot.shooter.setRPM(Constants.ShooterConfig.SHOOTER_RPM_FAR);
+            } else if (gamepad1.dpad_left && !previousDpadLeft){
+                robot.shooter.setRPM(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM);
             }
-            
             // Clamp RPM between 0.0 and MAX
-            currentShooterRPM = Math.max(0.0, Math.min(Constants.AutoShootingConfig.MAX_SHOOTER_RPM, currentShooterRPM));
-            
+
             // 2. Adjust Hood Position Target (Dpad Right/Left)
-            if (gamepad1.dpad_right && !previousDpadRight) {
-                currentHoodPosition += HOOD_INCREMENT;
-            } else if (gamepad1.dpad_left && !previousDpadLeft) {
-                currentHoodPosition -= HOOD_INCREMENT;
-            }
+ //           if (gamepad1.dpad_right && !previousDpadRight) {
+ //               currentHoodPosition += HOOD_INCREMENT;
+ //           } else if (gamepad1.dpad_left && !previousDpadLeft) {
+  //              currentHoodPosition -= HOOD_INCREMENT;
+  //          }
             
             // Clamp hood position between 0.0 and 1.0
             currentHoodPosition = Math.max(0.0, Math.min(1.0, currentHoodPosition));
@@ -74,11 +77,7 @@ public class ShootingDistanceTester extends LinearOpMode {
             robot.shooter.setHoodPosition(currentHoodPosition);
             
             // 4. Run Shooter Motor (Hold Cross)
-            if (gamepad1.cross) {
-                robot.shooter.setRPM(currentShooterRPM);
-            } else {
-                robot.shooter.setRPM(0);
-            }
+
 
             // 5. Intake Control (R2 = In, L2 = Out)
             double intakePower = gamepad1.right_trigger - gamepad1.left_trigger;
@@ -105,10 +104,7 @@ public class ShootingDistanceTester extends LinearOpMode {
             previousCircle = gamepad1.circle;
 
             // 7. Drive Control
-            double forward = -gamepad1.left_stick_y; 
-            double strafe = gamepad1.left_stick_x;  
-            double turn = gamepad1.right_stick_x;   
-            robot.basicDriveTrain.drive(forward, strafe, turn);
+            robot.updateDrivetrainControl(gamepad1);
 
             // Display Telemetry
             displayTelemetry();

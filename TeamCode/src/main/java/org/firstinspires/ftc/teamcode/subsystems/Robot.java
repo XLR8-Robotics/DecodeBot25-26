@@ -88,7 +88,7 @@ public class Robot {
      * Updates drivetrain control based on gamepad input.
      * @param gamepad The gamepad to read input from
      */
-    private void updateDrivetrainControl(Gamepad gamepad) {
+    public void updateDrivetrainControl(Gamepad gamepad) {
         // Standard mecanum drive control: left stick for translation, right stick for rotation
 
         basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);

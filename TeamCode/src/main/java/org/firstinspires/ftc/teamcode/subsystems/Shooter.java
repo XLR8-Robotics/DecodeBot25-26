@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class Shooter {
 
-    private final DcMotorEx shooterMotor;
+    public final DcMotorEx shooterMotor;
     private final Servo hoodServo;
     private boolean isRunning;
 
@@ -57,18 +57,6 @@ public class Shooter {
         // Reset encoder for velocity measurements
         shooterMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
-        // Set velocity PID coefficients from constants
-        PIDFCoefficients pidCoeffs = new PIDFCoefficients(
-            Constants.AutoShootingConfig.VELOCITY_KP,
-            Constants.AutoShootingConfig.VELOCITY_KI,
-            Constants.AutoShootingConfig.VELOCITY_KD,
-            Constants.AutoShootingConfig.VELOCITY_KF
-        );
-        
-        // Apply PID coefficients (RUN_USING_ENCODER mode for velocity control)
-        shooterMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidCoeffs);
-        
         // Set zero power behavior to float for smoother control
         shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
@@ -78,22 +66,8 @@ public class Shooter {
     // =================================================================================
 
     public void setRPM(double targetRPM) {
-        if (rpmControlEnabled) {
-            if(targetRPM == 0)
-            {
-                shooterMotor.setPower(0);
-            } else {
-                // Convert RPM to ticks per second for setVelocity()
-                double ticksPerSecond = rpmToTicksPerSecond(targetRPM);
-                shooterMotor.setVelocity(ticksPerSecond);
-            }
-            isRunning = targetRPM > 0;
-        } else {
-            // If RPM control is disabled, fall back to power control
-            // This is a rough approximation - you may want to create a better mapping
-            double approximatePower = Math.min(1.0, targetRPM / 5000.0); // Assume max RPM of 5000
-            setPower(approximatePower);
-        }
+        double targetVLS = targetRPM/2;
+        shooterMotor.setVelocity(targetVLS);
     }
 
     public double getCurrentRPM() {
@@ -106,7 +80,7 @@ public class Shooter {
     }
 
     private double rpmToTicksPerSecond(double rpm) {
-        return (rpm / 60.0) * Constants.AutoShootingConfig.SHOOTER_MOTOR_TICKS_PER_REV;
+        return (rpm * Constants.AutoShootingConfig.SHOOTER_MOTOR_TICKS_PER_REV) / 60.0;
     }
 
     private double ticksPerSecondToRPM(double ticksPerSecond) {

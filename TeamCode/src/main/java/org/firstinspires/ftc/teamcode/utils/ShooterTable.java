@@ -51,10 +51,7 @@ public class ShooterTable {
      * @return A ShotParams object containing the calculated power and hood position.
      */
     public static ShotParams getInterpolatedShot(double distanceToTarget) {
-        if (lookupTable.isEmpty()) {
-            // Fallback to default values if the table is empty for some reason
-            return new ShotParams(Constants.ShooterConfig.SHOOTER_SPEED, Constants.ShooterConfig.HOOD_CENTER);
-        }
+
 
         // Find the known data points immediately below and above the current distance
         Map.Entry<Double, ShotParams> lowerEntry = lookupTable.floorEntry(distanceToTarget);
