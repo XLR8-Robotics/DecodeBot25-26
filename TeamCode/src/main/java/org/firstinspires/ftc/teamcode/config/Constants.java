@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.config;
 
+import com.acmerobotics.dashboard.config.Config;
+
 /**
  * This class is a centralized configuration file for the robot.
  * It contains nested classes for different categories of constants, such as
@@ -68,24 +70,26 @@ public class Constants {
     /**
      * Contains constants for automating the turret aiming.
      */
+    @Config
     public static class TurretAimingConfig {
         // PID gains for the aiming controller. Tune these values carefully.
-        public static final double AIMING_KP = 0.03;
-        public static final double AIMING_KI = 0.0; // Tune this to eliminate steady-state error
-        public static final double AIMING_KD = 0.0; // Tune this to reduce oscillation
+        public static double AIMING_KP = 0.03;
+        public static double AIMING_KI = 0.0; // Tune this to eliminate steady-state error
+        public static double AIMING_KD = 0.0; // Tune this to reduce oscillation
 
         // Oscillation settings for when no target is found
-        public static final double OSCILLATION_SPEED = 0.3;  // Speed of oscillation (0.0 to 1.0)
-        public static final double OSCILLATION_PERIOD_MS = 3000.0;  // Time for one full oscillation cycle (ms)
-        public static final boolean ENABLE_OSCILLATION = true;  // Enable/disable oscillation feature
+        public static double OSCILLATION_SPEED = 0.3;  // Speed of oscillation (0.0 to 1.0)
+        public static double OSCILLATION_PERIOD_MS = 3000.0;  // Time for one full oscillation cycle (ms)
+        public static boolean ENABLE_OSCILLATION = true;  // Enable/disable oscillation feature
     }
     /**
      * Contains constants for automating the shooter aiming.
      */
+    @Config
     public static class ShooterAimingConfig {
         // Proportional gain for the aiming controller. Tune this value carefully.
-        public static final double HOOD_KP = 0.01;
-        public static final double POWER_KP = 0.02;
+        public static double HOOD_KP = 0.01;
+        public static double POWER_KP = 0.02;
     }
 
 
@@ -105,25 +109,21 @@ public class Constants {
     /**
      * Contains constants for the Shooter subsystem.
      */
+    @Config
     public static class ShooterConfig {
         // Shooter wheel speeds (0.0 to 1.0) - better naming
-
         
-        public static final double SHOOTER_RPM_IDLE = 2200;
-        public static final double SHOOTER_RPM_NEAR = 2800;
-        public static final double SHOOTER_RPM_MEDIUM = 3100;
-        public static final double SHOOTER_RPM_FAR = 3100;
-
-        // Hood servo positions (0.0 to 1.0)
-        public static final double HOOD_MAX = 0.55;
-        public static final double HOOD_POSITION_8 = 0.6875;
-        public static final double HOOD_POSITION_7 = 0.625;
-        public static final double HOOD_POSITION_6 = 0.5625;
-        public static final double HOOD_CENTER = 0.5;
-        public static final double HOOD_POSITION_4 = 0.4375;
-        public static final double HOOD_POSITION_3 = 0.375;
-        public static final double HOOD_POSITION_2 = 0.3125;
-        public static final double HOOD_MIN = 0.25;
+        public static double SHOOTER_RPM_NEAR = 2200;
+        public static double HOOD_POSITION_NEAR = 0.25;
+        
+        public static double SHOOTER_RPM_MEDIUM = 3100;
+        public static double HOOD_POSITION_MEDIUM = 0.5;
+        
+        public static double SHOOTER_RPM_FAR = 3100;
+        public static double HOOD_POSITION_FAR = 0.55;
+        public static double SHOOTER_RPM_IDLE = 1500;
+        
+        
     }
 
     /**
@@ -131,6 +131,7 @@ public class Constants {
      * Tune these values based on your robot's shooting performance.
      * Now uses RPM-based control for consistent, battery-independent shooting.
      */
+    @Config
     public static class AutoShootingConfig {
         // Motor specifications for RPM calculation
         // IMPORTANT: Update this to match your actual shooter motor!
@@ -138,15 +139,15 @@ public class Constants {
         // - goBILDA 5202/5203: 537.7 ticks/rev
         // - REV HD Hex Motor: 28 ticks/rev  
         // - AndyMark NeveRest: 1120 ticks/rev (20:1), 560 ticks/rev (40:1)
-        public static final double SHOOTER_MOTOR_TICKS_PER_REV = 28.0; // goBILDA 5000 series 1:1
+        public static double SHOOTER_MOTOR_TICKS_PER_REV = 28.0; // goBILDA 5000 series 1:1
         
         // Distance ranges in inches for different shooting zones
-        public static final double MIN_SHOOTING_DISTANCE = 12.0; // Minimum safe shooting distance
-        public static final double MAX_SHOOTING_DISTANCE = 120.0; // Maximum effective shooting distance
+        public static double MIN_SHOOTING_DISTANCE = 12.0; // Minimum safe shooting distance
+        public static double MAX_SHOOTING_DISTANCE = 120.0; // Maximum effective shooting distance
         
         // Distance-based lookup table breakpoints
         // These are the distance breakpoints where shooting parameters change
-        public static final double[] DISTANCE_BREAKPOINTS = {
+        public static double[] DISTANCE_BREAKPOINTS = {
             12.0,   // Very close shots
             24.0,   // Close shots
             36.0,   // Medium-close shots
@@ -161,7 +162,7 @@ public class Constants {
         // RPM-based shooter speeds for each distance breakpoint
         // These values are more consistent than power percentages!
         // TUNE THESE VALUES based on your robot's actual performance
-        public static final double[] SHOOTER_RPM_VALUES = {
+        public static double[] SHOOTER_RPM_VALUES = {
             2000,   // Very close - low RPM for gentle shots
             2300,   // Close - slightly higher RPM
             2600,   // Medium-close
@@ -174,7 +175,7 @@ public class Constants {
         };
         
         // Corresponding hood position values for each distance breakpoint
-        public static final double[] HOOD_POSITION_VALUES = {
+        public static double[] HOOD_POSITION_VALUES = {
             0.25,   // Very close - low arc (HOOD_MIN)
             0.31,   // Close - slightly higher arc
             0.37,   // Medium-close (HOOD_POS_3)
@@ -187,30 +188,30 @@ public class Constants {
         };
         
         // Control mode selection
-        public static final boolean USE_RPM_CONTROL = true; // Set to false to use power-based control
-        public static final boolean ENABLE_INTERPOLATION = true; // Enable smooth interpolation between breakpoints
+        // public static final boolean USE_RPM_CONTROL = true; // Removed since RPM control is now mandatory
+        public static boolean ENABLE_INTERPOLATION = true; // Enable smooth interpolation between breakpoints
         
         // Safety limits for RPM control
-        public static final double MIN_SHOOTER_RPM = 1500;  // Minimum safe RPM
-        public static final double MAX_SHOOTER_RPM = 6000;  // Maximum safe RPM for 1:1 motor
+        public static double MIN_SHOOTER_RPM = 1500;  // Minimum safe RPM
+        public static double MAX_SHOOTER_RPM = 6000;  // Maximum safe RPM for 1:1 motor
         
         // Fallback safety limits for power control (if RPM is disabled)
-        public static final double MIN_SHOOTER_POWER = 0.60;
-        public static final double MAX_SHOOTER_POWER = 1.0;
-        public static final double MIN_HOOD_POSITION = 0.25;
-        public static final double MAX_HOOD_POSITION = 0.75;
+        public static double MIN_SHOOTER_POWER = 0.60;
+        public static double MAX_SHOOTER_POWER = 1.0;
+        public static double MIN_HOOD_POSITION = 0.25;
+        public static double MAX_HOOD_POSITION = 0.75;
         
         // Velocity control PID gains (for RPM control)
         // These may need tuning based on your motor and load
-        public static final double VELOCITY_KP = 0.0;  // Proportional gain
-        public static final double VELOCITY_KI = 0.0;   // Integral gain
-        public static final double VELOCITY_KD = 0.0;   // Derivative gain
-        public static final double VELOCITY_KF = 0.0;  // Feed-forward gain
+        public static double VELOCITY_KP = 0.0;  // Proportional gain
+        public static double VELOCITY_KI = 0.0;   // Integral gain
+        public static double VELOCITY_KD = 0.0;   // Derivative gain
+        public static double VELOCITY_KF = 0.0;  // Feed-forward gain
         
         // Auto-shooting timeouts and delays
-        public static final long DISTANCE_MEASUREMENT_TIMEOUT_MS = 100; // Time to wait for stable distance reading
-        public static final long PARAMETER_UPDATE_DELAY_MS = 50; // Delay between parameter updates
-        public static final long RPM_STABILIZATION_TIME_MS = 500; // Time to wait for RPM to stabilize
+        public static long DISTANCE_MEASUREMENT_TIMEOUT_MS = 100; // Time to wait for stable distance reading
+        public static long PARAMETER_UPDATE_DELAY_MS = 50; // Delay between parameter updates
+        public static long RPM_STABILIZATION_TIME_MS = 500; // Time to wait for RPM to stabilize
     }
 
     /**
@@ -234,27 +235,27 @@ public class Constants {
      /**
      * Contains constants for the automated launch sequence.
      */
+    @Config
     public static class LaunchSequenceConfig {
         // Time in milliseconds for the shooter to spin up to speed.
-        public static final long SHOOTER_SPIN_UP_TIME_MS = 800; // 2 seconds
-
-         public static final double SHOOTER_POWER = 0.05;
-         public static final double SHOOTER_LAUNCH_RPM = 3500; // Default launch RPM
+        public static long SHOOTER_SPIN_UP_TIME_MS = 800; // 2 seconds
+         
+         public static double SHOOTER_LAUNCH_RPM = 3500; 
 
         // Time in milliseconds for the intake to run in reverse when cancelled.
-        public static final long INTAKE_REVERSE_TIME_MS = 1500; // 1 second
+        public static long INTAKE_REVERSE_TIME_MS = 1500; // 1 second
 
         // The time window in milliseconds to detect a triple press of the cancel button.
-        public static final long TRIPLE_PRESS_TIMEOUT_MS = 500; // 0.5 seconds
+        public static long TRIPLE_PRESS_TIMEOUT_MS = 500; // 0.5 seconds
         
         // Time window for single cross button press detection
-        public static final long SINGLE_PRESS_TIMEOUT_MS = 200;
+        public static long SINGLE_PRESS_TIMEOUT_MS = 200;
         
         // Time for lift servo to stay in lifting position during sequence
-        public static final long LIFT_SERVO_HOLD_TIME_MS = 650;
+        public static long LIFT_SERVO_HOLD_TIME_MS = 650;
         
         // Number of cross button presses needed to cancel launch sequence
-        public static final int TRIPLE_PRESS_COUNT = 3;
+        public static int TRIPLE_PRESS_COUNT = 3;
     }
 
 }

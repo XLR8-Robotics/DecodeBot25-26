@@ -6,35 +6,33 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
 /**
- * Manual Control OpMode without Launch Sequence
+ * Manual Control OpMode
  * 
- * This OpMode provides pure manual control of all robot subsystems without
- * any automated launch sequences. Perfect for testing, practice, and situations
- * where you want direct control over every aspect of the robot.
+ * This OpMode provides manual control of all robot subsystems.
  * 
  * Controls:
- * - Left Stick: Forward/backward and strafe
- * - Right Stick: Rotation
- * - All subsystem controls handled through Robot.manualUpdate()
+ * - Gamepad 1: Drivetrain and Intake
+ * - Gamepad 2: Turret, Launch Sequence, and Shooter
  */
-@TeleOp(name = "MC No Launch Sequence", group = "Game")
+@TeleOp(name = "Manual Tele Op", group = "Game")
 public class ManualControlOpMode extends LinearOpMode {
 
     private Robot robot;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        // Initialize the robot in legacy mode (no enhanced aiming)
+        // Initialize the robot
         robot = new Robot(hardwareMap);
 
         telemetry.addData("Status", "Manual Control Initialized");
-        telemetry.addData("Mode", "Pure Manual - No Launch Sequence");
-        telemetry.addData("Info", "Press START to begin driving");
+        telemetry.addData("Controls", "GP1: Drive/Intake | GP2: Turret/Shooter");
         telemetry.update();
         waitForStart();
 
         while (opModeIsActive()) {
-            robot.update(gamepad1);
+
+            robot.UpdateGamePad1(gamepad1);
+            robot.UpdateGamePad2(gamepad2);
             displayTelemetry();
         }
     }
@@ -83,5 +81,10 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("Launch Sequence", robot.getLaunchSequenceState());
         telemetry.addData("Target Side", robot.getTargetSide().toString());
         telemetry.addData("Limelight Target", robot.limelight.hasTarget() ? robot.limelight.getFiducialId() : "None");
+        if (robot.shooter.isShooterMotorDisabled()) {
+             telemetry.addData("Shooter Status", "DISABLED (Press Triangle to Enable)");
+        } else {
+             telemetry.addData("Shooter Status", "ENABLED");
+        }
     }
 }

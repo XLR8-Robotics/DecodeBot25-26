@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.config.Constants;
-import org.firstinspires.ftc.teamcode.utils.ShooterTable;
 
 /**
  * Manages the entire launch sequence from start to finish.
@@ -21,7 +20,6 @@ public class LaunchSequenceController {
      */
     public enum LaunchState {
         IDLE("Idle"),
-        SPOOLING("Spooling up"),
         FEEDING("Feeding projectile"),
         LIFTING("Lifting projectile"),
         FINISHING("Finishing"),
@@ -56,10 +54,6 @@ public class LaunchSequenceController {
     private final ElapsedTime stateTimer = new ElapsedTime();
     private final ButtonPressDetector crossButton = new ButtonPressDetector();
     
-    // NEW: Detects the Triangle button for toggling idle speed
-    private boolean previousTriangleButtonState = false;
-    private boolean isShooterIdleEnabled = false;
-
     private boolean shooterBlocked = true;
     
     // =================================================================================
@@ -100,13 +94,19 @@ public class LaunchSequenceController {
             return false; // Already running
         }
 
-        // NEW: Check if shooter is spinning (idle enabled)
+        // Check if shooter is spinning
         if (!shooter.isRunning()) {
             return false; // Don't launch if shooter isn't ready/spinning
         }
 
+        // Check if shooter is manually disabled
+        if (shooter.isShooterMotorDisabled()) {
+            return false; // Don't launch if motor is manually disabled
+        }
+
         prepareForLaunch();
-        transitionToState(LaunchState.SPOOLING);
+        // Spooling wait time removed, proceed directly to FEEDING
+        transitionToState(LaunchState.FEEDING);
         return true;
     }
     
@@ -154,18 +154,6 @@ public class LaunchSequenceController {
                 // No action needed
                 break;
         }
-
-        // --- 2. Idle Speed Toggle Inputs (Triangle Button) ---
-        // Moved logic from Shooter.java to here as requested
-        boolean currentTriangleButtonState = gamepad.triangle;
-        if(currentTriangleButtonState && !previousTriangleButtonState) {
-            // Toggle idle state locally
-            isShooterIdleEnabled = !isShooterIdleEnabled;
-            
-            // Apply to hardware
-            shooter.initializeIdleSpeed(isShooterIdleEnabled);
-        }
-        previousTriangleButtonState = currentTriangleButtonState;
     }
     
     /**
@@ -198,9 +186,6 @@ public class LaunchSequenceController {
             case IDLE:
                 // Nothing to do - waiting for input
                 break;
-            case SPOOLING:
-                updateSpoolingState();
-                break;
             case FEEDING:
                 updateFeedingState();
                 break;
@@ -217,28 +202,15 @@ public class LaunchSequenceController {
     }
     
     /**
-     * Handles the SPOOLING state - waiting for shooter to reach speed.
-     */
-    private void updateSpoolingState() {
-        shooter.setRPM(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
-        
-        // Check both time and RPM stability if available
-        boolean isTimeElapsed = stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.SHOOTER_SPIN_UP_TIME_MS;
-        boolean isRPMReached = shooter.isRPMStable(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
-        
-        // Transition if time has passed AND (RPM is stable OR we just rely on time)
-        // Currently relying on time as primary, but you can enforce RPM here:
-        if (isTimeElapsed) { 
-            transitionToState(LaunchState.FEEDING);
-        }
-    }
-    
-    /**
      * Handles the FEEDING state - running intake until projectile is detected.
      */
     private void updateFeedingState() {
         intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-        if(stateTimer.milliseconds() > Constants.LaunchSequenceConfig.INTAKE_REVERSE_TIME_MS){
+        // Ensure shooter is at Launch RPM
+        shooter.setRPM(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
+
+        // Simplified logic: Run intake for a set time then lift
+        if(stateTimer.milliseconds() > 1000){ // 1 second to feed
             transitionToState(LaunchState.LIFTING);
         }
     }
@@ -304,15 +276,8 @@ public class LaunchSequenceController {
             driveTrain.drive(0, 0, 0);
         }
         intake.setPower(0);
-        
-        // If idle was enabled before the shot, return to idle. Otherwise stop.
-        if (isShooterIdleEnabled) {
-            shooter.initializeIdleSpeed(true);
-        } else {
-            shooter.setRPM(0);
-        }
-        
         turret.setPower(0);
+        // Shooter is not stopped here to maintain idle speed or spin down control separately
     }
     
     /**
@@ -328,10 +293,10 @@ public class LaunchSequenceController {
             turret.setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
         }
 
-        stateTimer.reset();
-        while(stateTimer.milliseconds() < 150){
-            int x = 1;
-            x = x +1;
+        // Blocking wait - not ideal but preserving logic
+        ElapsedTime blockerTimer = new ElapsedTime();
+        while(blockerTimer.milliseconds() < 150){
+            // Wait
         }
         shooterBlocked = !shooterBlocked;
     }

@@ -5,11 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.config.Constants;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Subsystem for controlling the shooter mechanism, including the shooter wheel and hood.
@@ -21,62 +18,74 @@ public class Shooter {
     private final Servo hoodServo;
     private boolean isRunning;
 
-    private final List<Double> hoodPositions = Arrays.asList(
-            Constants.ShooterConfig.HOOD_MIN,
-            Constants.ShooterConfig.HOOD_CENTER,
-            Constants.ShooterConfig.HOOD_MAX
-    );
-    private int currentHoodPositionIndex = 2; // Start at center position (index 4)
-    private boolean previousDpadUpState = false;
-    private boolean previousDpadDownState = false;
+    public enum ShooterStates {
+        NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_NEAR),
+        MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
+        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR);
+
+        public final double rpm;
+        public final double hoodPosition;
+
+        ShooterStates(double rpm, double hoodPosition) {
+            this.rpm = rpm;
+            this.hoodPosition = hoodPosition;
+        }
+    }
     
-    // Automatic shooting variables
-    private double calculatedRPM = 0.0;        // For RPM-based control
+    private int currentStateIndex = 0;
+    private boolean previousIncrementStateInput = false;
+    private boolean previousDecrementStateInput = false;
+
+    // NEW: For long press detection
+    private final ElapsedTime trianglePressTimer = new ElapsedTime();
+    private boolean isTrianglePressed = false;
+    private static final double SHUTOFF_HOLD_TIME_SECONDS = 2.0;
+    
+    // Tracks if the toggle action has been performed during the current button press
+    private boolean shutoffActionExecuted = false;
+    // Tracks the disabled state of the shooter motor
+    private boolean shooterMotorDisabled = false;
+
     private double calculatedHoodPosition = 0.0;
-    private boolean rpmControlEnabled = Constants.AutoShootingConfig.USE_RPM_CONTROL;
+    private double targetRPM = 0.0;
 
     public Shooter(HardwareMap hardwareMap) {
         this.shooterMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.SHOOTER_MOTOR);
         this.hoodServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.HOOD_SERVO);
         this.isRunning = false;
 
-
-        // Set initial hood position
-        setHoodPosition(hoodPositions.get(currentHoodPositionIndex));
-        
-        // Configure motor for velocity control if RPM mode is enabled
-        if (rpmControlEnabled) {
-            setupVelocityControl();
-        }
-
-        // If the shooter motor spins in the wrong direction, you can reverse it by uncommenting the next line.
-        // this.shooterMotor.setDirection(DcMotor.Direction.REVERSE);
-    }
-
-    private void setupVelocityControl() {
-        // Reset encoder for velocity measurements
         shooterMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // Set zero power behavior to float for smoother control
         shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        applyState(ShooterStates.NEAR);
+    }
+    
+    private void applyState(ShooterStates state) {
+        setRPM(state.rpm);
+        setHoodPosition(state.hoodPosition);
     }
 
     // =================================================================================
     // RPM CONTROL METHODS
     // =================================================================================
-
+    
     public void setRPM(double targetRPM) {
-        double targetVLS = targetRPM/2;
-        shooterMotor.setVelocity(targetVLS);
+        this.targetRPM = targetRPM;
+        double targetVelocityTicksPerSec = rpmToTicksPerSecond(targetRPM);
+        shooterMotor.setVelocity(targetVelocityTicksPerSec);
+        
+        // Consider the shooter running if the target RPM is significant
+        this.isRunning = Math.abs(targetRPM) > 10;
+    }
+
+    public void setHoodPosition(double position) {
+        hoodServo.setPosition(position);
+        calculatedHoodPosition = position;
     }
 
     public double getCurrentRPM() {
-        if (rpmControlEnabled) {
-            double currentVelocity = shooterMotor.getVelocity(); // ticks per second
-            return ticksPerSecondToRPM(currentVelocity);
-        } else {
-            return -1; // RPM not available in power control mode
-        }
+        double currentVelocity = shooterMotor.getVelocity(); // ticks per second
+        return ticksPerSecondToRPM(currentVelocity);
     }
 
     private double rpmToTicksPerSecond(double rpm) {
@@ -88,10 +97,6 @@ public class Shooter {
     }
 
     public boolean isRPMStable(double targetRPM, double tolerance) {
-        if (!rpmControlEnabled) {
-            return true; // In power mode, assume it's always "stable"
-        }
-        
         double currentRPM = getCurrentRPM();
         return Math.abs(currentRPM - targetRPM) <= tolerance;
     }
@@ -99,93 +104,126 @@ public class Shooter {
     public boolean isRPMStable(double targetRPM) {
         return isRPMStable(targetRPM, 50.0);
     }
+
+    public void setPIDFCoefficients(double p, double i, double d, double f) {
+        com.qualcomm.robotcore.hardware.PIDFCoefficients coefficients = new com.qualcomm.robotcore.hardware.PIDFCoefficients(p, i, d, f);
+        shooterMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coefficients);
+    }
+
+    public com.qualcomm.robotcore.hardware.PIDFCoefficients getPIDFCoefficients() {
+        return shooterMotor.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
     
     // =================================================================================
-    // MANUAL CONTROL METHODS
+    // MAIN UPDATE LOOP
     // =================================================================================
 
-    public void manualUpdate(Gamepad gamepad) {
-        // --- Shooter Motor Control ---
-        // NOTE: Idle speed toggle moved to LaunchSequenceController
-
-        boolean currentDpadUpState = gamepad.dpad_down;
-        boolean currentDpadDownState = gamepad.dpad_up;
-
-        if (currentDpadUpState && !previousDpadUpState) {
-            // Move to the next hood position
-            currentHoodPositionIndex = Math.min(hoodPositions.size() - 1, currentHoodPositionIndex + 1);
-            setHoodPosition(hoodPositions.get(currentHoodPositionIndex));
-        } else if (currentDpadDownState && !previousDpadDownState) {
-            // Move to the previous hood position
-            currentHoodPositionIndex = Math.max(0, currentHoodPositionIndex - 1);
-            setHoodPosition(hoodPositions.get(currentHoodPositionIndex));
-        }
-
-        previousDpadUpState = currentDpadUpState;
-        previousDpadDownState = currentDpadDownState;
+    /**
+     * Updates the shooter subsystem based on gamepad input.
+     * Handles state transitions via D-pad.
+     * Handles emergency shutoff via Triangle (hold 2s).
+     * @param gamepad The gamepad to read input from.
+     */
+    public void update(Gamepad gamepad) {
+        handleStateTransitionInput(gamepad);
+        handleShutoffInput(gamepad);
     }
-    public void initializeIdleSpeed(Boolean setIdleSpeed){
-        if(setIdleSpeed)
-        {
-            setRPM(Constants.ShooterConfig.SHOOTER_RPM_IDLE);
+
+    private void handleStateTransitionInput(Gamepad gamepad) {
+        // Logic inverted in original code? keeping it consistent with intent:
+        // dpad_down increments state (towards FAR)
+        // dpad_up decrements state (towards NEAR)
+        boolean incrementStateInput = gamepad.dpad_down; 
+        boolean decrementStateInput = gamepad.dpad_up;
+
+        if (incrementStateInput && !previousIncrementStateInput) {
+            // Move to the next state (Limit at max index)
+            currentStateIndex = Math.min(ShooterStates.values().length - 1, currentStateIndex + 1);
+            applyState(ShooterStates.values()[currentStateIndex]);
+        } else if (decrementStateInput && !previousDecrementStateInput) {
+            // Move to the previous state (Limit at 0)
+            currentStateIndex = Math.max(0, currentStateIndex - 1);
+            applyState(ShooterStates.values()[currentStateIndex]);
         }
-        if(!setIdleSpeed)
-        {
+
+        previousIncrementStateInput = incrementStateInput;
+        previousDecrementStateInput = decrementStateInput;
+    }
+
+    private void handleShutoffInput(Gamepad gamepad) {
+        if (gamepad.triangle) {
+            if (!isTrianglePressed) {
+                // Button just pressed
+                isTrianglePressed = true;
+                trianglePressTimer.reset();
+                shutoffActionExecuted = false;
+            } else {
+                // Button held
+                if (trianglePressTimer.seconds() >= SHUTOFF_HOLD_TIME_SECONDS) {
+                     if (!shutoffActionExecuted) {
+                         // Toggle the disabled state
+                         shooterMotorDisabled = !shooterMotorDisabled;
+
+                         if (shooterMotorDisabled) {
+                             // If now disabled, turn off
+                             setRPM(0);
+                         } else {
+                             // If now enabled, turn on (re-apply state)
+                             applyState(ShooterStates.values()[currentStateIndex]);
+                         }
+                         shutoffActionExecuted = true;
+                     }
+                }
+            }
+        } else {
+            // Button released
+            isTrianglePressed = false;
+        }
+    }
+
+    public void initializeIdleSpeed(boolean setIdleSpeed){
+        if(setIdleSpeed) {
+            setRPM(Constants.ShooterConfig.SHOOTER_RPM_IDLE);
+        } else {
             setRPM(0);
         }
-
-        isRunning = setIdleSpeed;
-    }
-
-    public void update(Gamepad gamepad) {
-        manualUpdate(gamepad);
     }
     
     // =================================================================================
     // UTILITY AND GETTER METHODS
     // =================================================================================
-
-    public void setPower(double power) {
-        shooterMotor.setPower(power);
-        isRunning = power > 0;
-    }
     
     public boolean isRunning() {
         return isRunning;
     }
 
-    public void setHoodPosition(double position) {
-        hoodServo.setPosition(position);
+    public boolean isShooterMotorDisabled() {
+        return shooterMotorDisabled;
     }
 
-    /**
-     * Returns the current power of the shooter motor. Useful for telemetry.
-     * @return The current power of the shooter motor.
-     */
     public double getMotorPower() {
         return shooterMotor.getPower();
     }
-
-    /**
-     * Returns the current position of the hood servo. Useful for telemetry.
-     * @return The current position of the hood servo.
-     */
+    
     public double getServoPosition() {
         return hoodServo.getPosition();
     }
-
+    
+    public ShooterStates getCurrentState() {
+        return ShooterStates.values()[currentStateIndex];
+    }
+    
     public String getDetailedStatusString() {
         StringBuilder status = new StringBuilder();
-        status.append(String.format("Mode: %s | ", rpmControlEnabled ? "RPM" : "Power"));
+        status.append("Mode: RPM | ");
+        status.append(String.format("State: %s | ", getCurrentState().name()));
         
-        if (rpmControlEnabled) {
-            double currentRPM = getCurrentRPM();
-            status.append(String.format("RPM: %.0f → %.0f | ", currentRPM, calculatedRPM));
-            if (calculatedRPM > 0) {
-                status.append(String.format("Stable: %s | ", isRPMStable(calculatedRPM) ? "✅" : "❌"));
-            }
+        double currentRPM = getCurrentRPM();
+        status.append(String.format("RPM: %.0f → %.0f | ", currentRPM, targetRPM));
+        if (Math.abs(targetRPM) > 10) {
+             status.append(String.format("Stable: %s | ", isRPMStable(targetRPM) ? "✅" : "❌"));
         } else {
-            status.append(String.format("Power: %.2f | ", getMotorPower()));
+             status.append(String.format("Stopped%s | ", shooterMotorDisabled ? " (DISABLED)" : ""));
         }
         
         status.append(String.format("Hood: %.2f", calculatedHoodPosition));

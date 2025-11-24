@@ -67,17 +67,14 @@ public class Robot {
         this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight, basicDriveTrain);
     }
 
+    public void UpdateGamePad1(Gamepad gamepad)
+    {
+        updateDriveControl(gamepad);
+    }
 
-    public void update(Gamepad gamepad) {
-        limelight.update();
-
-        launchSequenceController.update(gamepad);
-
-        // If the launch sequence is not active, allow manual control.
-        if (!launchSequenceController.isRunning()) {
-            updateDrivetrainControl(gamepad);
-            updateSubsystemsManualControl(gamepad);
-        }
+    public void UpdateGamePad2(Gamepad gamepad)
+    {
+        UpdateShootingControls(gamepad);
     }
 
     // =================================================================================
@@ -88,20 +85,16 @@ public class Robot {
      * Updates drivetrain control based on gamepad input.
      * @param gamepad The gamepad to read input from
      */
-    public void updateDrivetrainControl(Gamepad gamepad) {
-        // Standard mecanum drive control: left stick for translation, right stick for rotation
+    public void updateDriveControl(Gamepad gamepad) {
 
+        intake.update(gamepad);
         basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);
     }
-    
-    /**
-     * Updates all subsystems with manual control.
-     * @param gamepad The gamepad to read input from
-     */
-    private void updateSubsystemsManualControl(Gamepad gamepad) {
-        intake.update(gamepad);
+
+    public void UpdateShootingControls(Gamepad gamepad) {
+        launchSequenceController.update(gamepad);
         shooter.update(gamepad);
-        turret.manualUpdate(gamepad);
+        turret.update(gamepad);
     }
 
     public void stopAllMotors() {
@@ -111,7 +104,7 @@ public class Robot {
             // Fallback for when controller isn'''t initialized yet
             basicDriveTrain.drive(0, 0, 0);
             if (intake != null) intake.setPower(0);
-            if (shooter != null) shooter.setPower(0);
+            if (shooter != null) shooter.setRPM(0);
             if (turret != null) turret.setPower(0);
         }
     }
