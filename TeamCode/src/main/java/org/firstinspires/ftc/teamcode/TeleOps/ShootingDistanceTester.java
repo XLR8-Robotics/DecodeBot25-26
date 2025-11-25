@@ -15,10 +15,10 @@ import org.firstinspires.ftc.teamcode.subsystems.Robot;
 public class ShootingDistanceTester extends LinearOpMode {
 
     private Robot robot;
-    public static double p = 0;
+    public static double p = 0.7;
     public static double i = 0;
     public static double d = 0;
-    public static double f = 0;
+    public static double f = 14.4;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -39,7 +39,7 @@ public class ShootingDistanceTester extends LinearOpMode {
             robot.shooter.setPIDFCoefficients(p, i, d, f);
 
             robot.UpdateGamePad1(gamepad1);
-            robot.UpdateGamePad2(gamepad2);
+            robot.UpdateGamePad2(gamepad1);
             
             displayTelemetry();
         }

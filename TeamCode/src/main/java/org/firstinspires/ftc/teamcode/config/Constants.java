@@ -252,7 +252,7 @@ public class Constants {
         public static long SINGLE_PRESS_TIMEOUT_MS = 200;
         
         // Time for lift servo to stay in lifting position during sequence
-        public static long LIFT_SERVO_HOLD_TIME_MS = 650;
+        public static long LIFT_SERVO_HOLD_TIME_MS = 400;
         
         // Number of cross button presses needed to cancel launch sequence
         public static int TRIPLE_PRESS_COUNT = 3;

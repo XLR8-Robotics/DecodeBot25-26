@@ -20,8 +20,13 @@ public class LaunchSequenceController {
      */
     public enum LaunchState {
         IDLE("Idle"),
-        FEEDING("Feeding projectile"),
+        FEEDING1("Feeding projectile"),
+        FEEDING2("Feeding projectile"),
+        FEEDING3("Feeding projectile"),
         LIFTING("Lifting projectile"),
+        FEEDING_TRANSITION("Feeding transition"),
+        FEEDING_TRANSITION2("Feeding transition 2"),
+
         FINISHING("Finishing"),
         CANCELLED("Cancelled");
         
@@ -105,8 +110,8 @@ public class LaunchSequenceController {
         }
 
         prepareForLaunch();
-        // Spooling wait time removed, proceed directly to FEEDING
-        transitionToState(LaunchState.FEEDING);
+        // Spooling wait time removed, proceed directly to FEEDING1
+        transitionToState(LaunchState.FEEDING1);
         return true;
     }
     
@@ -186,8 +191,19 @@ public class LaunchSequenceController {
             case IDLE:
                 // Nothing to do - waiting for input
                 break;
-            case FEEDING:
-                updateFeedingState();
+            case FEEDING1:
+                updateFeedingState(LaunchState.FEEDING_TRANSITION,400);
+                break;
+            case FEEDING_TRANSITION:
+                updateFeedingTrasition(LaunchState.FEEDING2,150);
+                break;
+            case FEEDING2:
+                updateFeedingState(LaunchState.FEEDING_TRANSITION2,400);
+                break;
+            case FEEDING_TRANSITION2:
+                updateFeedingTrasition(LaunchState.FEEDING3,150 );
+            case FEEDING3:
+                updateFeedingState(LaunchState.LIFTING, 700);
                 break;
             case LIFTING:
                 updateLiftingState();
@@ -204,17 +220,22 @@ public class LaunchSequenceController {
     /**
      * Handles the FEEDING state - running intake until projectile is detected.
      */
-    private void updateFeedingState() {
+    private void updateFeedingState(LaunchState nextState, double milisecs) {
         intake.setPower(Constants.IntakeConfig.INTAKE_SPEED);
-        // Ensure shooter is at Launch RPM
-        shooter.setRPM(Constants.LaunchSequenceConfig.SHOOTER_LAUNCH_RPM);
-
         // Simplified logic: Run intake for a set time then lift
-        if(stateTimer.milliseconds() > 1000){ // 1 second to feed
-            transitionToState(LaunchState.LIFTING);
+        if(stateTimer.milliseconds() > milisecs){ // 1 second to feed
+            transitionToState(nextState);
         }
     }
-    
+
+    private void updateFeedingTrasition(LaunchState nextState, double milisecs) {
+        intake.setPower(0);
+        // Simplified logic: Run intake for a set time then lift
+        if(stateTimer.milliseconds() > milisecs){ // 1 second to feed
+            transitionToState(nextState);
+        }
+    }
+
     /**
      * Handles the LIFTING state - lifting projectile into shooter.
      */
