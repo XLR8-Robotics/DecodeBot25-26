@@ -20,19 +20,19 @@ public class Constants {
 
 
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(9)
-            .forwardZeroPowerAcceleration(-53.4) //TODO test forwardzeropoweraccelerationtuner
-            .lateralZeroPowerAcceleration(-74.7) //TODO test lateralzeropoweraccelerationtuner
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0)) //TODO test panels translation
-            .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.01, 0)) //TODO test panels heading
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.003,0.0,0.005,0.6,0.0)) //TODO test panels drive
-            .centripetalScaling(0.005); //TODO test panels centripetal
+            .mass(11.21);
+            //.forwardZeroPowerAcceleration(-53.4) //TODO test forwardzeropoweraccelerationtuner
+            //.lateralZeroPowerAcceleration(-74.7) //TODO test lateralzeropoweraccelerationtuner
+            //.translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0)) //TODO test panels translation
+           // .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.01, 0)) //TODO test panels heading
+            //.drivePIDFCoefficients(new FilteredPIDFCoefficients(0.003,0.0,0.005,0.6,0.0)) //TODO test panels drive
+            //.centripetalScaling(0.005); //TODO test panels centripetal
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
-            .maxPower(1)
+            .maxPower(.5)
             .rightFrontMotorName(HardwareConfig.DRIVE_MOTOR_RIGHT_FRONT)
             .rightRearMotorName(HardwareConfig.DRIVE_MOTOR_RIGHT_REAR)
             .leftRearMotorName(HardwareConfig.DRIVE_MOTOR_LEFT_REAR)
@@ -48,13 +48,13 @@ public class Constants {
             //.lateralZeroPowerAcceleration(deceleration);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-5)
-            .strafePodX(0.5)
+            .forwardPodY(5.75)
+            .strafePodX(6.25)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName(HardwareConfig.PINPOINT_DEVICE_NAME)
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
-            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
+            .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
             
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
