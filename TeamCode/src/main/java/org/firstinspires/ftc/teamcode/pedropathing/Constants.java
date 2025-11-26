@@ -20,8 +20,8 @@ public class Constants {
 
 
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(11.21);
-            //.forwardZeroPowerAcceleration(-53.4) //TODO test forwardzeropoweraccelerationtuner
+            .mass(11.21)
+            .forwardZeroPowerAcceleration(-30.84); //TODO test forwardzeropoweraccelerationtuner
             //.lateralZeroPowerAcceleration(-74.7) //TODO test lateralzeropoweraccelerationtuner
             //.translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0)) //TODO test panels translation
            // .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.01, 0)) //TODO test panels heading
@@ -40,20 +40,18 @@ public class Constants {
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
-            //.rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            //.yVelocity()
-            //.xVelocity()
-            //.forwardZeroPowerAcceleration()
+            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .yVelocity(26.72)
+            .xVelocity(37.78);
             //.lateralZeroPowerAcceleration(deceleration);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(5.75)
-            .strafePodX(6.25)
+            .forwardPodY(-5.75)
+            .strafePodX(1.75)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName(HardwareConfig.PINPOINT_DEVICE_NAME)
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
             
     public static Follower createFollower(HardwareMap hardwareMap) {

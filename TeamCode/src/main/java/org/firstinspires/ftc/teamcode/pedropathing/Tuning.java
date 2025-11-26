@@ -11,6 +11,7 @@ import com.bylazar.configurables.PanelsConfigurables;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.configurables.annotations.IgnoreConfigurable;
 import com.bylazar.field.FieldManager;
+import com.bylazar.field.FieldPresetParams;
 import com.bylazar.field.PanelsField;
 import com.bylazar.field.Style;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -128,7 +129,7 @@ public class Tuning extends SelectableOpMode {
 class LocalizationTest extends OpMode {
     @Override
     public void init() {
-        follower.setStartingPose(new Pose(-34,-72));
+        follower.setStartingPose(new Pose(72,72, Math.toRadians(90)));
     }
 
     /** This initializes the PoseUpdater, the mecanum drive motors, and the Panels telemetry. */
@@ -153,7 +154,7 @@ class LocalizationTest extends OpMode {
      */
     @Override
     public void loop() {
-        follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
+        follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.right_stick_x, -gamepad1.left_stick_x);
         follower.update();
 
         telemetryM.debug("x:" + follower.getPose().getX());
@@ -335,7 +336,7 @@ class ForwardVelocityTuner extends OpMode {
 
     @Override
     public void init() {
-        follower.setStartingPose(new Pose(-34, -72, Math.toRadians(0)));
+        follower.setStartingPose(new Pose(72, 0, Math.toRadians(0)));
     }
 
     /** This initializes the drive motors as well as the cache of velocities and the Panels telemetry. */
@@ -491,7 +492,7 @@ class LateralVelocityTuner extends OpMode {
                 end = true;
                 stopRobot();
             } else {
-                follower.setTeleOpDrive(0,1,0,true);
+                follower.setTeleOpDrive(0,0,1,true);
                 double currentVelocity = Math.abs(follower.getVelocity().dot(new Vector(1, Math.PI / 2)));
                 velocities.add(currentVelocity);
                 velocities.remove(0);
