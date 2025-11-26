@@ -72,12 +72,27 @@ public class Constants {
      */
     @Config
     public static class TurretAimingConfig {
-        // PID gains for the aiming controller. Tune these values carefully.
+        // Legacy Software PID gains
         public static double AIMING_KP = 0.03;
         public static double AIMING_KI = 0.0; // Tune this to eliminate steady-state error
         public static double AIMING_KD = 0.0; // Tune this to reduce oscillation
 
-        // Oscillation settings for when no target is found
+        // Hardware PID for Auto-Aim (RUN_TO_POSITION)
+        public static double HARDWARE_P = 15.0;
+        public static double HARDWARE_I = 0.0;
+        public static double HARDWARE_D = 0.0;
+        public static double HARDWARE_F = 0.0;
+
+        // Search settings for when target is lost
+        public static double SEARCH_POWER = 0.3; // Slower power for search movements
+        public static double SEARCH_DWELL_TIME = 0.3; // Time to wait at each position (seconds)
+        public static double TARGET_LOST_TIMEOUT = 2.0;
+        public static double SEARCH_INITIAL_ANGLE = 15.0; // Initial search sweep angle
+        public static double SEARCH_ANGLE_INCREMENT = 20.0; // Angle increment per sweep
+        public static double SEARCH_MAX_ANGLE = 135.0; // Maximum search sweep angle
+        public static boolean IMU_SEARCH_ENABLED = true; // Enable/disable IMU-based search when target is lost
+
+        // Oscillation settings for when no target is found (Legacy - kept if needed but search params above are preferred)
         public static double OSCILLATION_SPEED = 0.3;  // Speed of oscillation (0.0 to 1.0)
         public static double OSCILLATION_PERIOD_MS = 3000.0;  // Time for one full oscillation cycle (ms)
         public static boolean ENABLE_OSCILLATION = true;  // Enable/disable oscillation feature

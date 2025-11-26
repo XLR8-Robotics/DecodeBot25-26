@@ -5,6 +5,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.config.Constants;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 import java.util.List;
 
@@ -17,13 +18,9 @@ public class Limelight {
     private LLResult latestResult = null;
 
     public Limelight(HardwareMap hardwareMap) {
-        // Get the Limelight 3A device from the hardware map
+
         limelight = hardwareMap.get(Limelight3A.class, Constants.HardwareConfig.LIMELIGHT_NAME);
-        
-        // Set the pipeline to AprilTag detection (typically pipeline 0)
         limelight.pipelineSwitch(0);
-        
-        // Start polling for data
         limelight.start();
     }
 
@@ -32,6 +29,16 @@ public class Limelight {
      */
     public void update() {
         latestResult = limelight.getLatestResult();
+    }
+
+    /**
+     * Updates the robot's orientation in the Limelight for MegaTag 2 fusion.
+     * @param headingDegrees The robot's heading in degrees.
+     */
+    public void updateRobotOrientation(double headingDegrees) {
+        if (limelight != null) {
+            limelight.updateRobotOrientation(headingDegrees);
+        }
     }
 
     /**
@@ -189,6 +196,42 @@ public class Limelight {
             // Return null if any calculation fails
             return null;
         }
+    }
+
+    /**
+     * Returns the robot's Pose3D relative to the field (via MegaTag or similar), if available from Limelight.
+     * This relies on the Limelight pipeline being configured for 3D/Robot Pose.
+     * @return The Pose3D of the robot, or null if not available.
+     */
+    public Pose3D getRobotPose3D() {
+        if (latestResult == null || !latestResult.isValid()) {
+            return null;
+        }
+        // Limelight 3A/MegaTag results usually provide a botpose
+        return latestResult.getBotpose();
+    }
+
+    /**
+     * Calculates the robot's heading from the Limelight's 3D pose estimation (MegaTag).
+     * @return The robot's heading in degrees, or Double.NaN if invalid.
+     */
+    public double getVisionHeading() {
+        Pose3D pose = getRobotPose3D();
+        if (pose != null) {
+            // The orientation is usually returned as a quaternion or Euler angles.
+            // LLResult botpose is in Field Space.
+            // Yaw is usually the rotation around the vertical axis (Z or Y depending on coord system).
+            // Limelight usually returns [x, y, z, roll, pitch, yaw] in the networktables array, 
+            // but the SDK object might expose it differently.
+            // Pose3D in FTC SDK has getOrientation().
+            
+            // Let's assume standard field centric yaw.
+            // We need to be careful about units and coordinate systems.
+            // Limelight docs say Yaw is in degrees.
+            
+             return pose.getOrientation().getYaw(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES);
+        }
+        return Double.NaN;
     }
 
     /**

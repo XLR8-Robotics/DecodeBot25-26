@@ -1,14 +1,18 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
+import java.util.List;
 
 /**
  * Subsystem for controlling the turret mechanism.
@@ -20,7 +24,8 @@ public class Turret {
      */
     public enum TurretState {
         AIMING,    // Automatic aiming mode using PID control
-        MANUAL     // Manual control mode
+        MANUAL,     // Manual control mode
+        SEARCHING // Search mode when target is lost
     }
     
     private final DcMotorEx turretMotor;
@@ -39,6 +44,21 @@ public class Turret {
     private double integral = 0;
     private double previousError = 0;
     private final ElapsedTime pidTimer = new ElapsedTime();
+
+    // --- Auto-Aiming / Searching State ---
+    private boolean autoAimEnabled = false;
+    private double lastKnownTargetAngleField = 0.0;
+    private double lastKnownDistance = 0.0;
+    private boolean targetWasVisible = false;
+    private final ElapsedTime targetLostTimer = new ElapsedTime();
+    private boolean isSearching = false;
+    private double searchAngle = Constants.TurretAimingConfig.SEARCH_INITIAL_ANGLE; // Current search sweep angle
+    private double searchCenterAngle = 0.0; // Center point of the search
+    private boolean searchingRight = true; // Direction of current search sweep
+    private final ElapsedTime searchDwellTimer = new ElapsedTime(); // Timer for dwelling at each position
+    private boolean isDwelling = false; // Whether we're currently dwelling at a position
+    private Limelight limelight;
+    private int targetFiducialId = -1;
 
     public Turret(HardwareMap hardwareMap) {
         this.turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
@@ -60,6 +80,22 @@ public class Turret {
     }
 
     /**
+     * Sets the limelight instance for auto-aiming.
+     * @param limelight The limelight instance
+     */
+    public void setLimelight(Limelight limelight) {
+        this.limelight = limelight;
+    }
+
+    /**
+     * Sets the specific fiducial ID to track.
+     * @param id The AprilTag ID to track. Set to -1 to track any tag (default).
+     */
+    public void setTargetFiducialId(int id) {
+        this.targetFiducialId = id;
+    }
+
+    /**
      * Sets the turret state and configures motor modes accordingly.
      * @param newState The new state to set (AIMING or MANUAL)
      */
@@ -68,12 +104,22 @@ public class Turret {
         
         if (newState == TurretState.AIMING) {
             // Set motor to position control for aiming
+            // For AutoAim mode (vision), we use RUN_TO_POSITION with hardware PID
             turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            // Reset PID variables
+            turretMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, 
+                new PIDFCoefficients(Constants.TurretAimingConfig.HARDWARE_P, 
+                                     Constants.TurretAimingConfig.HARDWARE_I, 
+                                     Constants.TurretAimingConfig.HARDWARE_D, 
+                                     Constants.TurretAimingConfig.HARDWARE_F));
+                                     
+            // Reset PID variables for software PID (legacy)
             integral = 0;
             previousError = 0;
             pidTimer.reset();
-        } else {
+        } else if (newState == TurretState.SEARCHING) {
+             turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        else {
             // Set motor to velocity control for manual operation
             turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
@@ -108,53 +154,202 @@ public class Turret {
      * @param currentRobotHeading The current robot heading in degrees
      */
     public void update(double currentRobotHeading) {
-        if (currentState != TurretState.AIMING) {
-            return;
+        // Note: MegaTag 2 updateRobotOrientation is skipped as we don't have continuous IMU
+        
+        if (autoAimEnabled) {
+            updateAutoAim(currentRobotHeading);
+        } else if (currentState == TurretState.AIMING) {
+            // Legacy software PID aiming logic
+             // i. Calculate the robot-relative target angle
+            double currentRobotHeadingRadians = Math.toRadians(currentRobotHeading);
+            double robotRelativeAngle = targetFieldAngle - currentRobotHeadingRadians;
+            
+            // Normalize angle to [-π, π]
+            while (robotRelativeAngle > Math.PI) {
+                robotRelativeAngle -= 2 * Math.PI;
+            }
+            while (robotRelativeAngle < -Math.PI) {
+                robotRelativeAngle += 2 * Math.PI;
+            }
+            
+            // ii. Convert this angle to motor encoder ticks
+            int targetPosition = angleToTicks(robotRelativeAngle);
+            
+            // iii. Use PID control to drive the motor to the calculated position
+            double currentAngle = getAngle() * (Math.PI / 180.0); // Convert to radians
+            double error = robotRelativeAngle - currentAngle;
+            
+            // PID calculations
+            double deltaTime = pidTimer.seconds();
+            pidTimer.reset();
+            
+            integral += error * deltaTime;
+            double derivative = (deltaTime > 0) ? (error - previousError) / deltaTime : 0;
+            
+            double output = Constants.TurretAimingConfig.AIMING_KP * error +
+                        Constants.TurretAimingConfig.AIMING_KI * integral +
+                        Constants.TurretAimingConfig.AIMING_KD * derivative;
+            
+            // Apply limit switch logic
+            if (isLeftLimitPressed() && output < 0) {
+                output = 0;
+            }
+            if (isRightLimitPressed() && output > 0) {
+                output = 0;
+            }
+            
+            // Set target position and power
+            if (turretMotor.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                 turretMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            turretMotor.setPower(Math.max(-1.0, Math.min(1.0, output)));
+            
+            previousError = error;
+        }
+    }
+
+    private void updateAutoAim(double robotHeading) {
+        if (limelight == null) return;
+
+        double currentTurretAngle = getAngle();
+        
+        // Find the specific target if ID is set, or any target
+        List<LLResultTypes.FiducialResult> results = limelight.getFiducialResults();
+        LLResultTypes.FiducialResult target = null;
+        
+        if (results != null) {
+            for (LLResultTypes.FiducialResult res : results) {
+                if (targetFiducialId == -1 || res.getFiducialId() == targetFiducialId) {
+                    target = res;
+                    break;
+                }
+            }
         }
         
-        // i. Calculate the robot-relative target angle
-        double currentRobotHeadingRadians = Math.toRadians(currentRobotHeading);
-        double robotRelativeAngle = targetFieldAngle - currentRobotHeadingRadians;
-        
-        // Normalize angle to [-π, π]
-        while (robotRelativeAngle > Math.PI) {
-            robotRelativeAngle -= 2 * Math.PI;
+        if (target != null) {
+            // TARGET VISIBLE: Track directly using vision
+             if (isSearching) {
+                turretMotor.setPower(0); 
+                isSearching = false;
+                searchAngle = Constants.TurretAimingConfig.SEARCH_INITIAL_ANGLE;
+                setState(TurretState.AIMING);
+            }
+            
+            double tx = target.getTargetXDegrees();
+            
+            // Store field centric angle
+             lastKnownTargetAngleField = -robotHeading + currentTurretAngle + tx;
+             targetWasVisible = true;
+             targetLostTimer.reset();
+             
+             double desiredTurretAngle = currentTurretAngle + tx;
+             setTargetAngleInternal(desiredTurretAngle);
+             
+             // Update distance using this specific target's TY
+             double ty = target.getTargetYDegrees();
+             double angle = Constants.LimelightConfig.LIMELIGHT_ANGLE + ty;
+             lastKnownDistance = (Constants.LimelightConfig.APRIL_TAG_HEIGHT - Constants.LimelightConfig.LIMELIGHT_HEIGHT)
+                     / Math.tan(Math.toRadians(angle));
+
+        } else if (targetWasVisible && targetLostTimer.seconds() < Constants.TurretAimingConfig.TARGET_LOST_TIMEOUT && Constants.TurretAimingConfig.IMU_SEARCH_ENABLED) {
+             // TARGET LOST: Use Heading-based search (Field Centric Hold)
+            double desiredTurretAngle = lastKnownTargetAngleField - (-robotHeading);
+             // Normalize angle to [-180, 180]
+            while (desiredTurretAngle > 180) desiredTurretAngle -= 360;
+            while (desiredTurretAngle < -180) desiredTurretAngle += 360;
+
+            setTargetAngleInternal(desiredTurretAngle);
+            isSearching = false;
+             setState(TurretState.AIMING);
+
+        } else {
+             // TARGET LOST: Tracking disabled or timeout expired
+             // Start oscillating search pattern
+            targetWasVisible = false;
+            setState(TurretState.SEARCHING);
+
+            if (!isSearching) {
+                isSearching = true;
+                searchCenterAngle = currentTurretAngle;
+                searchAngle = Constants.TurretAimingConfig.SEARCH_INITIAL_ANGLE;
+                searchingRight = true;
+                isDwelling = false;
+            }
+             // Check if we're dwelling (waiting at a position)
+            if (isDwelling) {
+                // Wait for dwell time before moving to next position
+                if (searchDwellTimer.seconds() >= Constants.TurretAimingConfig.SEARCH_DWELL_TIME) {
+                    isDwelling = false; // Done dwelling, move to next position
+                } else {
+                    // Still dwelling, don't move yet
+                    return;
+                }
+            }
+            
+            double targetAngle;
+            boolean shouldMove = false;
+
+            if (searchingRight) {
+                targetAngle = searchCenterAngle + searchAngle;
+                 if (currentTurretAngle >= targetAngle - 2) {
+                    searchingRight = false;
+                    isDwelling = true;
+                    searchDwellTimer.reset();
+                 } else {
+                     shouldMove = true;
+                 }
+            } else {
+                targetAngle = searchCenterAngle - searchAngle;
+                if (currentTurretAngle <= targetAngle + 2) {
+                     searchingRight = true;
+                    isDwelling = true;
+                    searchDwellTimer.reset();
+                     searchAngle = Math.min(
+                        searchAngle + Constants.TurretAimingConfig.SEARCH_ANGLE_INCREMENT,
+                        Constants.TurretAimingConfig.SEARCH_MAX_ANGLE
+                    );
+                } else {
+                    shouldMove = true;
+                }
+            }
+            
+             if (shouldMove) {
+                // Move to target position with reduced power
+                setTargetAngleInternal(targetAngle, Constants.TurretAimingConfig.SEARCH_POWER);
+            }
         }
-        while (robotRelativeAngle < -Math.PI) {
-            robotRelativeAngle += 2 * Math.PI;
+    }
+
+    private void setTargetAngleInternal(double angle) {
+        setTargetAngleInternal(angle, Constants.TurretConfig.TURRET_SPEED);
+    }
+
+    private void setTargetAngleInternal(double angle, double power) {
+        int targetPositionTicks = angleToTicks(Math.toRadians(angle));
+        turretMotor.setTargetPosition(targetPositionTicks);
+        turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        turretMotor.setPower(power);
+    }
+
+    public void enableAutoAim(boolean enable) {
+        this.autoAimEnabled = enable;
+        if (!enable) {
+            setState(TurretState.MANUAL);
+        } else {
+             setState(TurretState.AIMING);
         }
-        
-        // ii. Convert this angle to motor encoder ticks
-        int targetPosition = angleToTicks(robotRelativeAngle);
-        
-        // iii. Use PID control to drive the motor to the calculated position
-        double currentAngle = getAngle() * (Math.PI / 180.0); // Convert to radians
-        double error = robotRelativeAngle - currentAngle;
-        
-        // PID calculations
-        double deltaTime = pidTimer.seconds();
-        pidTimer.reset();
-        
-        integral += error * deltaTime;
-        double derivative = (deltaTime > 0) ? (error - previousError) / deltaTime : 0;
-        
-        double output = Constants.TurretAimingConfig.AIMING_KP * error +
-                       Constants.TurretAimingConfig.AIMING_KI * integral +
-                       Constants.TurretAimingConfig.AIMING_KD * derivative;
-        
-        // Apply limit switch logic
-        if (isLeftLimitPressed() && output < 0) {
-            output = 0;
-        }
-        if (isRightLimitPressed() && output > 0) {
-            output = 0;
-        }
-        
-        // Set target position and power
-        turretMotor.setTargetPosition(targetPosition);
-        turretMotor.setPower(Math.max(-1.0, Math.min(1.0, output)));
-        
-        previousError = error;
+    }
+    
+    public boolean isTracking() {
+        return autoAimEnabled && targetWasVisible;
+    }
+    
+    public boolean isSearching() {
+        return isSearching;
+    }
+
+    public double getLastKnownDistance() {
+        return lastKnownDistance;
     }
     
     /**
@@ -164,23 +359,27 @@ public class Turret {
      */
     public void manualUpdate(Gamepad gamepad) {
         // Ensure turret is in manual mode for proper operation
-        if (currentState != TurretState.MANUAL) {
+        if (currentState != TurretState.MANUAL && !autoAimEnabled) {
             setState(TurretState.MANUAL);
         }
         
-        double turretPower = 0;
-
-        if (gamepad.left_bumper && !isLeftLimitPressed()) {
-            turretPower = Constants.TurretConfig.TURRET_SPEED;
-        } else if (gamepad.right_bumper && !isRightLimitPressed()) {
-            turretPower = -Constants.TurretConfig.TURRET_SPEED;
-        } else {
-            turretPower = 0;
+        // Override auto-aim if manual input is detected
+        if (Math.abs(gamepad.left_stick_x) > 0.1 || gamepad.left_bumper || gamepad.right_bumper) {
+             enableAutoAim(false);
         }
 
+        if (!autoAimEnabled) {
+            double turretPower = 0;
 
-
-        setPower(turretPower);
+            if (gamepad.left_bumper && !isLeftLimitPressed()) {
+                turretPower = Constants.TurretConfig.TURRET_SPEED;
+            } else if (gamepad.right_bumper && !isRightLimitPressed()) {
+                turretPower = -Constants.TurretConfig.TURRET_SPEED;
+            } else {
+                turretPower = 0;
+            }
+             setPower(turretPower);
+        }
 
         // Shooter blocker toggle with square button
         boolean currentSquareButtonState = gamepad.square;
