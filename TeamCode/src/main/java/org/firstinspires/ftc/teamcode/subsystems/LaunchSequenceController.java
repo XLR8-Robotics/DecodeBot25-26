@@ -49,7 +49,7 @@ public class LaunchSequenceController {
     private final Shooter shooter;
     private final Turret turret;
     private final Limelight limelight;
-    final BasicDriveTrain driveTrain;
+
     
     // =================================================================================
     // STATE VARIABLES
@@ -69,12 +69,11 @@ public class LaunchSequenceController {
      * Creates a new LaunchSequenceController with references to required subsystems.
      */
     public LaunchSequenceController(Intake intake, Shooter shooter, Turret turret, 
-                                   Limelight limelight, BasicDriveTrain driveTrain) {
+                                   Limelight limelight) {
         this.intake = intake;
         this.shooter = shooter;
         this.turret = turret;
         this.limelight = limelight;
-        this.driveTrain = driveTrain;
     }
     
     // =================================================================================
@@ -293,9 +292,8 @@ public class LaunchSequenceController {
      * Stops all motors safely.
      */
     private void stopAllMotors() {
-        if (driveTrain != null) {
-            driveTrain.drive(0, 0, 0);
-        }
+
+
         intake.setPower(0);
         turret.setPower(0);
         // Shooter is not stopped here to maintain idle speed or spin down control separately

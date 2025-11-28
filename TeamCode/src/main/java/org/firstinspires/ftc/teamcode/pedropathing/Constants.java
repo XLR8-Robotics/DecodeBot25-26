@@ -21,28 +21,28 @@ public class Constants {
 
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(11.21)
-            .forwardZeroPowerAcceleration(-30.84); //TODO test forwardzeropoweraccelerationtuner
-            //.lateralZeroPowerAcceleration(-74.7) //TODO test lateralzeropoweraccelerationtuner
-            //.translationalPIDFCoefficients(new PIDFCoefficients(0.08, 0, 0.01, 0)) //TODO test panels translation
-           // .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.01, 0)) //TODO test panels heading
-            //.drivePIDFCoefficients(new FilteredPIDFCoefficients(0.003,0.0,0.005,0.6,0.0)) //TODO test panels drive
+            .forwardZeroPowerAcceleration(-30.99)
+            .lateralZeroPowerAcceleration(-70.1)
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0.04))
+            .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.01, 0)) //TODO test panels heading
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.01,0.0,0.0002,0,0.02)); //TODO test panels drive
             //.centripetalScaling(0.005); //TODO test panels centripetal
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
-            .maxPower(.5)
+            .maxPower(.7)
             .rightFrontMotorName(HardwareConfig.DRIVE_MOTOR_RIGHT_FRONT)
             .rightRearMotorName(HardwareConfig.DRIVE_MOTOR_RIGHT_REAR)
             .leftRearMotorName(HardwareConfig.DRIVE_MOTOR_LEFT_REAR)
             .leftFrontMotorName(HardwareConfig.DRIVE_MOTOR_LEFT_FRONT)
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .yVelocity(26.72)
-            .xVelocity(37.78);
+            .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .xVelocity(79.84)
+            .yVelocity(60.85);
             //.lateralZeroPowerAcceleration(deceleration);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()

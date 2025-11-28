@@ -64,7 +64,7 @@ public class Robot {
         this.shooter = new Shooter(hardwareMap);
         this.turret = new Turret(hardwareMap);
         this.limelight = new Limelight(hardwareMap);
-        this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight, basicDriveTrain);
+        this.launchSequenceController = new LaunchSequenceController(intake, shooter, turret, limelight);
     }
 
     public void UpdateGamePad1(Gamepad gamepad)
@@ -88,7 +88,7 @@ public class Robot {
     public void updateDriveControl(Gamepad gamepad) {
 
         intake.update(gamepad);
-        basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.right_stick_x, gamepad.left_stick_x);
+        basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
     }
 
     public void UpdateShootingControls(Gamepad gamepad) {
