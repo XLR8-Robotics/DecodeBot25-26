@@ -17,8 +17,8 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class Intake {
     private final DcMotorEx intakeMotor;
     private final Servo liftServo;
-    private final DistanceSensor leftDistanceSensor;
-    private final DistanceSensor rightDistanceSensor;
+ //   private final DistanceSensor leftDistanceSensor;
+ //   private final DistanceSensor rightDistanceSensor;
 
     private boolean previousCircleButtonState = false;
 
@@ -34,8 +34,8 @@ public class Intake {
     public Intake(HardwareMap hardwareMap) {
         this.intakeMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.INTAKE_MOTOR);
         this.liftServo = hardwareMap.get(Servo.class, Constants.HardwareConfig.LIFT_SERVO);
-        this.leftDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_LEFT);
-        this.rightDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_RIGHT);
+    //    this.leftDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_LEFT);
+     //   this.rightDistanceSensor = hardwareMap.get(DistanceSensor.class, Constants.HardwareConfig.INTAKE_DISTANCE_RIGHT);
         this.liftServo.setPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
         // If the intake runs in the wrong direction, you can reverse it by uncommenting the next line.
         // this.intakeMotor.setDirection(DcMotor.Direction.REVERSE);
@@ -45,12 +45,16 @@ public class Intake {
      * Call this method in your TeleOp loop to control the intake with the gamepad triggers.
      * @param gamepad The gamepad that will control the intake.
      */
-    public void update(Gamepad gamepad) {
-        // The right trigger controls intake, the left trigger controls outtake.
-        double intakePower = gamepad.right_trigger - gamepad.left_trigger;
 
+    public void updateIntake(Gamepad gamepad){
+
+        double intakePower = gamepad.right_trigger - gamepad.left_trigger;
         setPower(intakePower * Constants.IntakeConfig.INTAKE_SPEED);
 
+
+    }
+    public void update(Gamepad gamepad) {
+        // The right trigger controls intake, the left trigger controls outtake.
         // --- Lift Servo Logic ---
         boolean currentCircleButtonState = gamepad.circle;
 
@@ -75,7 +79,12 @@ public class Intake {
 
         previousCircleButtonState = currentCircleButtonState;
     }
-
+    public void liftUp(){
+        setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
+    }
+    public void liftDown(){
+        setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
+    }
     public void setPower(double power) {
         intakeMotor.setPower(power);
     }
@@ -95,7 +104,7 @@ public class Intake {
         return liftServo.getPosition();
     }
 
-    public double getLeftDistance(DistanceUnit unit) {
+   /* public double getLeftDistance(DistanceUnit unit) {
         return leftDistanceSensor.getDistance(unit);
     }
 
@@ -106,5 +115,5 @@ public class Intake {
     public boolean isObjectDetected() {
         return getLeftDistance(DistanceUnit.CM) < Constants.IntakeConfig.INTAKE_DISTANCE_THRESHOLD_CM ||
                getRightDistance(DistanceUnit.CM) < Constants.IntakeConfig.INTAKE_DISTANCE_THRESHOLD_CM;
-    }
+    }*/
 }

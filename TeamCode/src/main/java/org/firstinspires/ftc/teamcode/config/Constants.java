@@ -54,7 +54,7 @@ public class Constants {
      */
     public static class TurretConfig {
         // Speed for turret rotation (0.0 to 1.0)
-        public static final double TURRET_SPEED = 0.5;
+        public static final double TURRET_SPEED = 0.4;
         // Servo positions for shooterBlocker Servo
         public static final double SHOOTER_BLOCKER_ZERO_POSITION= 0.45;
         public static final double SHOOTER_BLOCKER_BLOCKING_POSITION = 0.0;
@@ -128,14 +128,14 @@ public class Constants {
     public static class ShooterConfig {
         // Shooter wheel speeds (0.0 to 1.0) - better naming
         
-        public static double SHOOTER_RPM_NEAR = 2200;
+        public static double SHOOTER_RPM_NEAR = 2400;
         public static double HOOD_POSITION_NEAR = 0.25;
         
-        public static double SHOOTER_RPM_MEDIUM = 3100;
+        public static double SHOOTER_RPM_MEDIUM = 2650;
         public static double HOOD_POSITION_MEDIUM = 0.5;
         
-        public static double SHOOTER_RPM_FAR = 3100;
-        public static double HOOD_POSITION_FAR = 0.55;
+        public static double SHOOTER_RPM_FAR = 3150;
+        public static double HOOD_POSITION_FAR = 0.25;
         public static double SHOOTER_RPM_IDLE = 1500;
         
         

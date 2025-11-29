@@ -40,9 +40,6 @@ public class LunchTester extends LinearOpMode {
             // Intake Telemetry
             telemetry.addData("Intake Power", robot.intake.getMotorPower());
             telemetry.addData("Intake Lift Position", robot.intake.getLiftServoPosition());
-            telemetry.addData("Intake Object Detected", robot.intake.isObjectDetected());
-            telemetry.addData("Intake Left Distance (cm)", robot.intake.getLeftDistance(DistanceUnit.CM));
-            telemetry.addData("Intake Right Distance (cm)", robot.intake.getRightDistance(DistanceUnit.CM));
 
             telemetry.update();
         }

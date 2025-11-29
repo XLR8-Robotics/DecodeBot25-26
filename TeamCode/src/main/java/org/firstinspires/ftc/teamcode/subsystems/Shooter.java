@@ -19,8 +19,8 @@ public class Shooter {
     private boolean isRunning;
 
     public enum ShooterStates {
-        NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_NEAR),
-        MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
+        NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
+        //MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
         FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR);
 
         public final double rpm;
@@ -31,6 +31,13 @@ public class Shooter {
             this.hoodPosition = hoodPosition;
         }
     }
+
+    public enum ShooterStateNames{
+        NEAR,
+        MIDDLE,
+        FAR
+    }
+    public String cState;
     
     private int currentStateIndex = 0;
     private boolean previousIncrementStateInput = false;
@@ -58,6 +65,7 @@ public class Shooter {
         shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         applyState(ShooterStates.NEAR);
+        cState = ShooterStateNames.NEAR.name();
     }
     
     private void applyState(ShooterStates state) {
@@ -109,7 +117,9 @@ public class Shooter {
         com.qualcomm.robotcore.hardware.PIDFCoefficients coefficients = new com.qualcomm.robotcore.hardware.PIDFCoefficients(p, i, d, f);
         shooterMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coefficients);
     }
-
+    public String getShooterState(){
+        return cState;
+    }
     public com.qualcomm.robotcore.hardware.PIDFCoefficients getPIDFCoefficients() {
         return shooterMotor.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
     }
@@ -140,10 +150,12 @@ public class Shooter {
             // Move to the next state (Limit at max index)
             currentStateIndex = Math.min(ShooterStates.values().length - 1, currentStateIndex + 1);
             applyState(ShooterStates.values()[currentStateIndex]);
+            cState = ShooterStates.values()[currentStateIndex].name();
         } else if (decrementStateInput && !previousDecrementStateInput) {
             // Move to the previous state (Limit at 0)
             currentStateIndex = Math.max(0, currentStateIndex - 1);
             applyState(ShooterStates.values()[currentStateIndex]);
+            cState = ShooterStates.values()[currentStateIndex].name();
         }
 
         previousIncrementStateInput = incrementStateInput;

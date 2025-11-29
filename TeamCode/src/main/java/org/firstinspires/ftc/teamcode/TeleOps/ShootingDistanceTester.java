@@ -83,10 +83,7 @@ public class ShootingDistanceTester extends LinearOpMode {
      * Displays sensor readings and limit switch states.
      */
     private void displaySensorTelemetry() {
-        telemetry.addData("=== SENSORS ===", "");
-        telemetry.addData("Intake Left Distance (cm)", "%.2f", robot.intake.getLeftDistance(DistanceUnit.CM));
-        telemetry.addData("Intake Right Distance (cm)", "%.2f", robot.intake.getRightDistance(DistanceUnit.CM));
-        telemetry.addData("Object Detected", robot.intake.isObjectDetected() ? "YES" : "NO");
+
         telemetry.addData("Turret Left Limit", robot.turret.isLeftLimitPressed() ? "PRESSED" : "Open");
         telemetry.addData("Turret Right Limit", robot.turret.isRightLimitPressed() ? "PRESSED" : "Open");
         telemetry.addData("Turret Angle", "%.2f degrees", robot.turret.getAngle());

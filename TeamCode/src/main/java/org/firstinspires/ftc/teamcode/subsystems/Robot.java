@@ -82,6 +82,11 @@ public class Robot {
         UpdateShootingControls(gamepad);
     }
 
+    public void UpdateGamePad2NoLS(Gamepad gamepad)
+    {
+        UpdateShootingControlsNoLs(gamepad);
+    }
+
     // =================================================================================
     // PRIVATE HELPER METHODS
     // =================================================================================
@@ -92,7 +97,7 @@ public class Robot {
      */
     public void updateDriveControl(Gamepad gamepad) {
 
-        intake.update(gamepad);
+        intake.updateIntake(gamepad);
         basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
     }
 
@@ -104,6 +109,11 @@ public class Robot {
         launchSequenceController.update(gamepad);
         shooter.update(gamepad);
         turret.update(gamepad);
+    }
+    public void UpdateShootingControlsNoLs(Gamepad gamepad) {
+        intake.update(gamepad);
+        shooter.update(gamepad);
+        turret.manualUpdate(gamepad);
     }
 
     public void stopAllMotors() {

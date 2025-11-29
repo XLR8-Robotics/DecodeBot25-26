@@ -23,16 +23,16 @@ public class ManualControlOpMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         // Initialize the robot
         robot = new Robot(hardwareMap);
-
         telemetry.addData("Status", "Manual Control Initialized");
         telemetry.addData("Controls", "GP1: Drive/Intake | GP2: Turret/Shooter");
+
         telemetry.update();
         waitForStart();
 
         while (opModeIsActive()) {
 
             robot.UpdateGamePad1(gamepad1);
-            robot.UpdateGamePad2(gamepad2);
+            robot.UpdateGamePad2NoLS(gamepad2);
             displayTelemetry();
         }
     }
@@ -58,6 +58,7 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("Hood Position", "%.2f", robot.shooter.getServoPosition());
         telemetry.addData("Lift Servo Position", "%.2f", robot.intake.getLiftServoPosition());
         telemetry.addData("Shooter Stopper Position", "%.2f", robot.turret.getShooterBlockerPosition());
+        telemetry.addData("Shooter States", robot.shooter.getCurrentState());
     }
     
     /**
@@ -65,9 +66,9 @@ public class ManualControlOpMode extends LinearOpMode {
      */
     private void displaySensorTelemetry() {
         telemetry.addData("=== SENSORS ===", "");
-        telemetry.addData("Intake Left Distance (cm)", "%.2f", robot.intake.getLeftDistance(DistanceUnit.CM));
+       /* telemetry.addData("Intake Left Distance (cm)", "%.2f", robot.intake.getLeftDistance(DistanceUnit.CM));
         telemetry.addData("Intake Right Distance (cm)", "%.2f", robot.intake.getRightDistance(DistanceUnit.CM));
-        telemetry.addData("Object Detected", robot.intake.isObjectDetected() ? "YES" : "NO");
+        telemetry.addData("Object Detected", robot.intake.isObjectDetected() ? "YES" : "NO");*/
         telemetry.addData("Turret Left Limit", robot.turret.isLeftLimitPressed() ? "PRESSED" : "Open");
         telemetry.addData("Turret Right Limit", robot.turret.isRightLimitPressed() ? "PRESSED" : "Open");
         telemetry.addData("Turret Angle", "%.2f degrees", robot.turret.getAngle());

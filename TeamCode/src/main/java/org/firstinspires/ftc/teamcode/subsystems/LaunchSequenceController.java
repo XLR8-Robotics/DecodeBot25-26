@@ -191,21 +191,21 @@ public class LaunchSequenceController {
                 // Nothing to do - waiting for input
                 break;
             case FEEDING1:
-                updateFeedingState(LaunchState.FEEDING_TRANSITION,400);
+                updateFeedingState(LaunchState.FEEDING_TRANSITION,700);
                 break;
             case FEEDING_TRANSITION:
-                updateFeedingTrasition(LaunchState.FEEDING2,150);
+                updateFeedingTrasition(LaunchState.FEEDING2,75);
                 break;
             case FEEDING2:
-                updateFeedingState(LaunchState.FEEDING_TRANSITION2,400);
+                updateFeedingState(LaunchState.FEEDING_TRANSITION2, 700);
                 break;
             case FEEDING_TRANSITION2:
-                updateFeedingTrasition(LaunchState.FEEDING3,150 );
+                updateFeedingTrasition(LaunchState.FEEDING3,75);
             case FEEDING3:
-                updateFeedingState(LaunchState.LIFTING, 700);
+                updateFeedingState(LaunchState.LIFTING, 100);
                 break;
             case LIFTING:
-                updateLiftingState();
+                updateLiftingState(700);
                 break;
             case FINISHING:
                 updateFinishingState();
@@ -228,7 +228,9 @@ public class LaunchSequenceController {
     }
 
     private void updateFeedingTrasition(LaunchState nextState, double milisecs) {
-        intake.setPower(0);
+        if(milisecs != 0)
+            intake.setPower(0);
+
         // Simplified logic: Run intake for a set time then lift
         if(stateTimer.milliseconds() > milisecs){ // 1 second to feed
             transitionToState(nextState);
@@ -238,12 +240,14 @@ public class LaunchSequenceController {
     /**
      * Handles the LIFTING state - lifting projectile into shooter.
      */
-    private void updateLiftingState() {
-        intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_LIFTING_POSITION);
-        
-        if (stateTimer.milliseconds() >= Constants.LaunchSequenceConfig.LIFT_SERVO_HOLD_TIME_MS) {
-            intake.setLiftPosition(Constants.IntakeConfig.LIFT_SERVO_NOT_LIFTING_POSITION);
+    private void updateLiftingState(double miliseconds) {
+        if(stateTimer.milliseconds() >= miliseconds)
+            intake.liftUp();
+
+        if (stateTimer.milliseconds() >= miliseconds + 350) {
+            intake.liftDown();
             transitionToState(LaunchState.FINISHING);
+
         }
     }
     
