@@ -72,6 +72,11 @@ public class Robot {
         updateDriveControl(gamepad);
     }
 
+    public void UpdateGamePad1NoDriveTrain(Gamepad gamepad)
+    {
+        updateDriveControlNoDriveTrain(gamepad);
+    }
+
     public void UpdateGamePad2(Gamepad gamepad)
     {
         UpdateShootingControls(gamepad);
@@ -89,6 +94,10 @@ public class Robot {
 
         intake.update(gamepad);
         basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
+    }
+
+    public void updateDriveControlNoDriveTrain(Gamepad gamepad) {
+        intake.update(gamepad);
     }
 
     public void UpdateShootingControls(Gamepad gamepad) {
