@@ -18,7 +18,20 @@ import java.util.List;
  * Subsystem for controlling the turret mechanism.
  */
 public class Turret {
-    
+
+    // PID constants (these values need to be tuned)
+    private double KpX = 0.05;   // Proportional gain for horizontal tracking
+    private double KiX = 0.0;    // Integral gain for horizontal tracking
+    private double KdX = 0.01;   // Derivative gain for horizontal tracking
+    private double KpY = 0.05;   // Proportional gain for vertical tracking (if camera moves vertically)
+    private double KiY = 0.0;    // Integral gain for vertical tracking
+    private double KdY = 0.01;   // Derivative gain for vertical tracking
+
+    private double previousErrorX = 0; // For calculating derivative of horizontal error
+    private double previousErrorY = 0; // For calculating derivative of vertical error
+    private double integralX = 0;     // For calculating integral of horizontal error
+    private double integralY = 0;     // For calculating integral of vertical error
+
     /**
      * Enum for turret operating states.
      */
@@ -58,6 +71,9 @@ public class Turret {
     private final ElapsedTime searchDwellTimer = new ElapsedTime(); // Timer for dwelling at each position
     private boolean isDwelling = false; // Whether we're currently dwelling at a position
     private Limelight limelight;
+    private double storedTX = 0;  // Store horizontal offset
+    private double storedTY = 0;  // Store vertical offset
+    private boolean isTargetStored = false;  // Flag to check if target position is stored
     private int targetFiducialId = -1;
 
     public Turret(HardwareMap hardwareMap) {
@@ -154,8 +170,7 @@ public class Turret {
      * @param currentRobotHeading The current robot heading in degrees
      */
     public void update(double currentRobotHeading) {
-        // Note: MegaTag 2 updateRobotOrientation is skipped as we don't have continuous IMU
-        
+
         if (autoAimEnabled) {
             updateAutoAim(currentRobotHeading);
         } else if (currentState == TurretState.AIMING) {
@@ -214,18 +229,8 @@ public class Turret {
         double currentTurretAngle = getAngle();
         
         // Find the specific target if ID is set, or any target
-        List<LLResultTypes.FiducialResult> results = limelight.getFiducialResults();
         LLResultTypes.FiducialResult target = null;
-        
-        if (results != null) {
-            for (LLResultTypes.FiducialResult res : results) {
-                if (targetFiducialId == -1 || res.getFiducialId() == targetFiducialId) {
-                    target = res;
-                    break;
-                }
-            }
-        }
-        
+
         if (target != null) {
             // TARGET VISIBLE: Track directly using vision
              if (isSearching) {
@@ -339,7 +344,107 @@ public class Turret {
              setState(TurretState.AIMING);
         }
     }
-    
+
+    public void  setPipeline(int pipelineValue) {
+        limelight.pipelineSwitch(pipelineValue);
+    }
+    public void storeTargetPosition(int targetTagID, int pipelineValue) {
+        if (limelight == null) return;
+
+        // Check if the limelight has a valid target
+        if (limelight.hasTargets()) {
+
+
+            // Get the current offset values for the target
+            double txValue = limelight.getTx();  // Horizontal offset of the tag (in degrees)
+            double tyValue = limelight.getTy();  // Vertical offset of the tag (in degrees)
+
+            // Get the best tag ID
+            int currentTagID = limelight.getBestTagId();
+
+            // Check if the detected tag matches the target tag ID
+            if (currentTagID == targetTagID) {
+                // Store the target's position if the tag ID matches
+                storedTX = txValue;
+                storedTY = tyValue;  // Store the vertical offset (not necessary for horizontal tracking)
+                isTargetStored = true;  // Mark that the target's position has been stored
+                System.out.println("Target position stored: TX = " + storedTX + ", TY = " + storedTY);
+            } else {
+                System.out.println("Found a different target (ID: " + currentTagID + "), ignoring...");
+            }
+        }
+    }
+    /**
+     * Simple auto-tracking method for TeleOp using Limelight TX value.
+     * Uses proportional control to center the target.
+     *
+     *
+     */
+// Simple auto track function using PID control
+    public void simpleAutoTrack() {
+        if (limelight == null) return;
+
+        if (!isTargetStored) {
+            System.out.println("No target stored. Call storeTargetPosition() first.");
+            return;
+        }
+
+        double txValue = limelight.getTx();  // Horizontal offset of the tag (in degrees)
+        double tyValue = limelight.getTy();  // Vertical offset of the tag (in degrees)
+        boolean hasTarget = limelight.hasTargets();  // Check if a target is visible
+        double tvValue = hasTarget ? 1.0 : 0.0;  // Target visible or not
+
+        // Horizontal tracking (PID)
+        if (tvValue == 1.0) {
+            double errorX = txValue - storedTX;  // Horizontal error
+            double powerX = pidControl(errorX, previousErrorX, integralX, KpX, KiX, KdX);
+
+            // Update the previous error and integral for PID calculation
+            previousErrorX = errorX;
+            integralX += errorX;
+
+            // Safety for limit switches (assuming positive power is LEFT and negative is RIGHT)
+            if (powerX > 0 && isLeftLimitPressed()) {  // Stop if left limit switch is pressed
+                powerX = 0;
+            } else if (powerX < 0 && isRightLimitPressed()) {  // Stop if right limit switch is pressed
+                powerX = 0;
+            }
+
+            // Apply the motor power for horizontal movement (left/right)
+            turretMotor.setPower(powerX);
+        }
+
+        // Vertical tracking (if needed, for example, if the camera adjusts vertically)
+        if (limelight.hasTargets()) {
+            double errorY = tyValue - storedTY;  // Vertical error
+            double powerY = pidControl(errorY, previousErrorY, integralY, KpY, KiY, KdY);
+
+            // Update the previous error and integral for PID calculation
+            previousErrorY = errorY;
+            integralY += errorY;
+
+            // Apply the motor power for vertical movement (up/down) if the turret or camera can move vertically
+            // Assuming you have a separate motor to control the vertical movement of the turret
+            // verticalTurretMotor.setPower(powerY);
+        }
+    }
+
+    public double pidControl(double error, double prevError, double integral, double Kp, double Ki, double Kd) {
+        // Proportional term
+        double P = Kp * error;
+
+        // Integral term (accumulating error)
+        integral += error;
+        double I = Ki * integral;
+
+        // Derivative term (rate of change of error)
+        double D = Kd * (error - prevError);
+
+        // Compute the PID output
+        return P + I + D;
+    }
+
+
     public boolean isTracking() {
         return autoAimEnabled && targetWasVisible;
     }
@@ -419,6 +524,13 @@ public class Turret {
         turretMotor.setPower(power);
     }
 
+    public void setShooterBlocked(){
+        setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+    }
+
+    public void setShooterUnBlocked(){
+        setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+    }
     public void setShooterBlockerPosition(double position) {
         shooterBlocker.setPosition(position);
     }

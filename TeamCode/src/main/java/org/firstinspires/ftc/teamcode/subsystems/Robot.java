@@ -26,8 +26,6 @@ public class Robot {
     
     // Advanced motion control (optional - for enhanced aiming)
     public Follower follower;
-    public AimingController aimingController;
-    
 
     // Launch sequence control (cleaner implementation)
     public LaunchSequenceController launchSequenceController;

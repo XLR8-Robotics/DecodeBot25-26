@@ -1,0 +1,56 @@
+package org.firstinspires.ftc.teamcode.TeleOps;
+
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+
+import java.util.Locale;
+
+@TeleOp(name = "Limelight Tuner (Panels)", group = "Vision")
+public class LimelightTesting extends OpMode {
+    private TelemetryManager telemetryM;
+    private Limelight limelight;
+    // private LimelightConfig limelightConfig; // This can be removed if always using default
+
+    @Override
+    public void init() {
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+        // Initialize Limelight with a specific config, e.g., the default one
+        limelight = new Limelight(hardwareMap);
+        limelight.start(); // Start Limelight polling
+    }
+
+    @Override
+    public void loop() {
+        limelight.updateResult(); // Fetch the latest data from Limelight
+
+        telemetryM.debug("Has Targets: " + limelight.hasTargets());
+        telemetryM.debug("Best Tag ID: " + limelight.getBestTagId());
+        telemetryM.debug("Best Tag Name: " + limelight.getBestTagName());
+        telemetryM.debug("tx: " + String.format(Locale.US, "%.2f", limelight.getTx()));
+        telemetryM.debug("ty: " + String.format(Locale.US, "%.2f", limelight.getTy()));
+
+        Pose3D pose = limelight.getBotPose();
+        if (pose != null) {
+            telemetryM.debug(String.format(Locale.US, "BotPose X: %.2f m", pose.getPosition().x));
+            telemetryM.debug(String.format(Locale.US, "BotPose Y: %.2f m", pose.getPosition().y));
+            telemetryM.debug(String.format(Locale.US, "BotPose Z: %.2f m", pose.getPosition().z));
+        } else {
+            telemetryM.debug("BotPose X: N/A");
+            telemetryM.debug("BotPose Y: N/A");
+            telemetryM.debug("BotPose Z: N/A");
+        }
+        telemetryM.update(telemetry);
+    }
+
+    @Override
+    public void stop() {
+        if (limelight != null) {
+            limelight.stop(); // Stop Limelight polling
+        }
+    }
+}

@@ -81,7 +81,6 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("=== SYSTEM STATUS ===", "");
         telemetry.addData("Launch Sequence", robot.getLaunchSequenceState());
         telemetry.addData("Target Side", robot.getTargetSide().toString());
-        telemetry.addData("Limelight Target", robot.limelight.hasTarget() ? robot.limelight.getFiducialId() : "None");
         if (robot.shooter.isShooterMotorDisabled()) {
              telemetry.addData("Shooter Status", "DISABLED (Press Triangle to Enable)");
         } else {

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.pedropathing.follower.Follower;
@@ -15,20 +17,24 @@ public class AutoAimTeleOp extends LinearOpMode {
     private Follower follower;
     private boolean previousTriangleButtonState = false;
     private boolean isAutoAimEnabled = false;
+    private TelemetryManager telemetryM;
 
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+
         robot = new Robot(hardwareMap);
         robot.turret.setLimelight(robot.limelight);
+        robot.limelight.start();
         robot.shooter.setRPM(0);
         
         try {
             follower = org.firstinspires.ftc.teamcode.pedropathing.Constants.createFollower(hardwareMap);
             follower.setStartingPose(new Pose(0, 0, 0));
             follower.startTeleopDrive();
-            telemetry.addData("Follower", "Initialized");
+            telemetryM.debug("Follower: Initialized");
         } catch (Exception e) {
-            telemetry.addData("Warning", "Follower init failed: " + e.getMessage());
+            telemetryM.debug("Warning: Follower init failed: " + e.getMessage());
         }
         
         // Alliance Selection
@@ -40,12 +46,12 @@ public class AutoAimTeleOp extends LinearOpMode {
                 robot.setTargetSide(Robot.TargetSide.RED);
             }
             
-            telemetry.addData("Status", "Initialized");
-            telemetry.addData("ALLIANCE", robot.getTargetSide());
+            telemetryM.debug("Status: Initialized");
+            telemetryM.debug("ALLIANCE: " + robot.getTargetSide());
             int id = (robot.getTargetSide() == Robot.TargetSide.RED) ? FieldConstants.RED_APRILTAG_ID : FieldConstants.BLUE_APRILTAG_ID;
-            telemetry.addData("Target ID", id);
-            telemetry.addData("Select Alliance", "Press X for BLUE, B for RED");
-            telemetry.update();
+            telemetryM.debug("Target ID: " + id);
+            telemetryM.debug("Select Alliance: Press X for BLUE, B for RED");
+            telemetryM.update(telemetry);
         }
         
         // Configure Turret Target based on selection
@@ -53,11 +59,14 @@ public class AutoAimTeleOp extends LinearOpMode {
             ? FieldConstants.RED_APRILTAG_ID 
             : FieldConstants.BLUE_APRILTAG_ID;
         robot.turret.setTargetFiducialId(targetId);
+
+        robot.turret.storeTargetPosition(20, 0);
         
         waitForStart();
 
         while (opModeIsActive()) {
 
+            robot.limelight.updateResult();
             robot.UpdateGamePad1(gamepad1);
             robot.UpdateGamePad2(gamepad2);
             
@@ -80,38 +89,39 @@ public class AutoAimTeleOp extends LinearOpMode {
             previousTriangleButtonState = currentTriangleButtonState;
             
             if (isAutoAimEnabled) {
-                robot.turret.update(robotHeadingDegrees);
+                robot.turret.simpleAutoTrack();
             }
 
             displayTelemetry(robotHeadingDegrees);
         }
+        robot.limelight.stop();
     }
     private void displayTelemetry(double heading) {
-        telemetry.addData("=== AUTO-AIM STATUS ===", "");
-        telemetry.addData("Enabled", isAutoAimEnabled);
-        telemetry.addData("State", robot.turret.getState());
-        telemetry.addData("Tracking", robot.turret.isTracking() ? "LOCKED" : "SEARCHING/LOST");
+        telemetryM.debug("=== AUTO-AIM STATUS ===");
+        telemetryM.debug("Enabled: " + isAutoAimEnabled);
+        telemetryM.debug("State: " + robot.turret.getState());
+        telemetryM.debug("Tracking: " + (robot.turret.isTracking() ? "LOCKED" : "SEARCHING/LOST"));
         
-        telemetry.addData("=== ODOMETRY ===", "");
-        telemetry.addData("Robot Heading", "%.1f°", heading);
+        telemetryM.debug("=== ODOMETRY ===");
+        telemetryM.debug(String.format("Robot Heading: %.1f°", heading));
         if (follower != null) {
-             telemetry.addData("Pose X", "%.1f", follower.getPose().getX());
-             telemetry.addData("Pose Y", "%.1f", follower.getPose().getY());
+             telemetryM.debug(String.format("Pose X: %.1f", follower.getPose().getX()));
+             telemetryM.debug(String.format("Pose Y: %.1f", follower.getPose().getY()));
         }
         
-        telemetry.addData("=== TURRET ===", "");
-        telemetry.addData("Angle", "%.2f°", robot.turret.getAngle());
+        telemetryM.debug("=== TURRET ===");
+        telemetryM.debug(String.format("Angle: %.2f°", robot.turret.getAngle()));
         if (robot.turret.isTracking()) {
-            telemetry.addData("Target Dist", "%.1f in", robot.turret.getLastKnownDistance());
+            telemetryM.debug(String.format("Target Dist: %.1f in", robot.turret.getLastKnownDistance()));
         }
         
-        telemetry.addData("=== LIMELIGHT ===", "");
-        telemetry.addData("Has Target", robot.limelight.hasTarget());
-        if (robot.limelight.hasTarget()) {
-            telemetry.addData("Tag ID", robot.limelight.getFiducialId());
-            telemetry.addData("TX", "%.2f", robot.limelight.getTx());
+        telemetryM.debug("=== LIMELIGHT ===");
+        telemetryM.debug("Has Target: " + robot.limelight.hasTargets());
+        if (robot.limelight.hasTargets()) {
+            telemetryM.debug("Tag ID: " + robot.limelight.getBestTagId());
+            telemetryM.debug(String.format("TX: %.2f", robot.limelight.getTx()));
         }
         
-        telemetry.update();
+        telemetryM.update(telemetry);
     }
 }

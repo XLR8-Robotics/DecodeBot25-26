@@ -21,7 +21,8 @@ public class Shooter {
     public enum ShooterStates {
         NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
         //MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
-        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR);
+        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR),
+        FARAUTO(Constants.ShooterConfig.SHOOTER_RPM_FAR_AUTO, Constants.ShooterConfig.HOOD_POSITION_FAR);
 
         public final double rpm;
         public final double hoodPosition;
@@ -68,7 +69,7 @@ public class Shooter {
         cState = ShooterStateNames.NEAR.name();
     }
     
-    private void applyState(ShooterStates state) {
+    public void applyState(ShooterStates state) {
         setRPM(state.rpm);
         setHoodPosition(state.hoodPosition);
     }
