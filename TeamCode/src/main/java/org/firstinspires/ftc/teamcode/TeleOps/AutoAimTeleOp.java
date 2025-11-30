@@ -20,6 +20,7 @@ public class AutoAimTeleOp extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         robot = new Robot(hardwareMap);
         robot.turret.setLimelight(robot.limelight);
+        robot.shooter.setRPM(0);
         
         try {
             follower = org.firstinspires.ftc.teamcode.pedropathing.Constants.createFollower(hardwareMap);
@@ -32,6 +33,7 @@ public class AutoAimTeleOp extends LinearOpMode {
         
         // Alliance Selection
         while (!isStarted() && !isStopRequested()) {
+            robot.shooter.setRPM(0);
             if (gamepad1.square) {
                 robot.setTargetSide(Robot.TargetSide.BLUE);
             } else if (gamepad1.circle) {
@@ -70,7 +72,7 @@ public class AutoAimTeleOp extends LinearOpMode {
                 robotHeadingDegrees = Math.toDegrees(follower.getPose().getHeading());
             }
 
-            boolean currentTriangleButtonState = gamepad2.triangle;
+            boolean currentTriangleButtonState = gamepad1.triangle;
             if (currentTriangleButtonState && !previousTriangleButtonState) {
                 isAutoAimEnabled = !isAutoAimEnabled;
                 robot.turret.enableAutoAim(isAutoAimEnabled);
