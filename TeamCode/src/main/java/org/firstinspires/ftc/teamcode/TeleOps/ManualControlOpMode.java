@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.TeleOps;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
@@ -9,6 +11,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Robot;
 public class ManualControlOpMode extends LinearOpMode {
 
     private Robot robot;
+    private boolean hasRumbled = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -18,12 +21,15 @@ public class ManualControlOpMode extends LinearOpMode {
         telemetry.addData("Controls", "GP1: Drive/Intake | GP2: Turret/Shooter");
 
         telemetry.update();
+        ElapsedTime timer = new ElapsedTime();
         waitForStart();
+        timer.startTime();
 
         while (opModeIsActive()) {
 
             robot.UpdateGamePad1(gamepad1);
             robot.UpdateGamePad2(gamepad2);
+            notifyLast15Seconds(timer);
             displayTelemetry();
         }
     }
@@ -54,6 +60,15 @@ public class ManualControlOpMode extends LinearOpMode {
              telemetry.addData("Shooter Status", "DISABLED (Press Triangle to Enable)");
         } else {
              telemetry.addData("Shooter Status", "ENABLED");
+        }
+    }
+    private void notifyLast15Seconds(ElapsedTime timer)
+    {
+        if(timer.seconds() >= 101 && !hasRumbled)
+        {
+            gamepad1.rumble(500);
+            gamepad2.rumble(500);
+            hasRumbled = true;
         }
     }
 }
