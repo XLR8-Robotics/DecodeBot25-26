@@ -98,7 +98,6 @@ public class AutoAimingTurret {
             throw new RuntimeException("Turret initialization failed: " + e.getMessage());
         }
     }
-
     public void RunTurret() {
         try {
             robotHeading = getRobotHeading();
