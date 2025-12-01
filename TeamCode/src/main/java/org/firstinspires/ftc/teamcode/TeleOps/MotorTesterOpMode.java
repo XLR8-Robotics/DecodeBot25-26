@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -17,6 +18,7 @@ import org.firstinspires.ftc.teamcode.config.Constants.HardwareConfig;
  * - D-Pad Left: Back Right Motor
  * - D-Pad Right: Front Right Motor
  */
+@Disabled
 @TeleOp(name = "Motor Tester", group = "Test")
 public class MotorTesterOpMode extends LinearOpMode {
 
@@ -24,7 +26,6 @@ public class MotorTesterOpMode extends LinearOpMode {
     private DcMotor rightFront;
     private DcMotor leftRear;
     private DcMotor rightRear;
-
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize motors using constants

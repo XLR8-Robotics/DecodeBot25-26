@@ -44,10 +44,6 @@ public class DecodeFirstAuto extends LinearOpMode {
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
 
-
-        // Build the path
-
-
         // Reset runtime
         runtime.reset();
 
@@ -65,7 +61,7 @@ public class DecodeFirstAuto extends LinearOpMode {
 
             switch (pathState) {
                 case 0:
-                    waitForShooter();
+                    delayTime(5000);
                     pathState = 1;
                 case 1:
                     followPath(follower, buildPath(startPose, scorePose));
@@ -79,7 +75,6 @@ public class DecodeFirstAuto extends LinearOpMode {
                     }
                     break;
                 case 3:
-
                     follower.followPath(buildPath(PPGPose, PGPPose));
                     break;
             }
@@ -91,7 +86,6 @@ public class DecodeFirstAuto extends LinearOpMode {
             telemetry.update();
         }
     }
-
     private PathChain buildPath(Pose startPose, Pose targetPose) {
         return follower.pathBuilder()
                 .addPath(new BezierLine(startPose, targetPose))
@@ -106,11 +100,9 @@ public class DecodeFirstAuto extends LinearOpMode {
         follower.followPath(path);
 
     }
-    // Optional intake/shooting hooks
     private void intakeStart() {
         robot.intake.setPower(1);
     }
-
     private void intakeStop(){
         robot.intake.setPower(0);
     }
@@ -125,12 +117,13 @@ public class DecodeFirstAuto extends LinearOpMode {
         robot.turret.setShooterBlocked();
         intakeStop();
     }
-
-    private void waitForShooter() {
+    private void delayTime(double delayTime) {
         ElapsedTime timer = new ElapsedTime();
         timer.startTime();
-        while(timer.milliseconds() <= 5000)
+        String wait;
+        while(timer.milliseconds() <= delayTime)
         {
+             wait = "wait";
         }
     }
 }
