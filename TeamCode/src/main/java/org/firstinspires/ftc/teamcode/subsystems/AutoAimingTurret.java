@@ -199,6 +199,50 @@ public class AutoAimingTurret {
             System.out.println("Failed to switch Limelight pipeline: " + e.getMessage());
         }
     }
+    public void setPIDF(double p, double i, double d, double f) {
+        try {
+            PIDFCoefficients pidfCoefficients = new PIDFCoefficients(p, i, d, f);
+            turretMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, pidfCoefficients);
+        } catch (Exception e) {
+            System.out.println("Failed to update PIDF: " + e.getMessage());
+        }
+    }
+
+    public void oscillateTurretForPID(double amplitudeDegrees, double periodSeconds) {
+        if (turretMotor == null) return;
+
+        double currentAngle = turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
+        double time = targetLostTimer.seconds(); // reuse timer for oscillation
+        double targetAngle = currentAngle + amplitudeDegrees * Math.sin(2.0 * Math.PI * time / periodSeconds);
+
+        int targetTicks = (int) (targetAngle * TICKS_PER_DEGREE);
+
+        // Respect limit switches
+        if ((targetTicks < turretMotor.getCurrentPosition() && isLeftLimitPressed()) ||
+                (targetTicks > turretMotor.getCurrentPosition() && isRightLimitPressed())) {
+            turretMotor.setPower(0);
+        } else {
+            turretMotor.setTargetPosition(targetTicks);
+            turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            turretMotor.setPower(MAX_POWER);
+        }
+    }
+    public void moveTurretByDegrees(double degrees) {
+        if (turretMotor == null) return;
+
+        int targetTicks = (int) (turretMotor.getCurrentPosition() + degrees * TICKS_PER_DEGREE);
+
+        // Respect limit switches
+        if ((targetTicks < turretMotor.getCurrentPosition() && isLeftLimitPressed()) ||
+                (targetTicks > turretMotor.getCurrentPosition() && isRightLimitPressed())) {
+            turretMotor.setPower(0);
+        } else {
+            turretMotor.setTargetPosition(targetTicks);
+            turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            turretMotor.setPower(MAX_POWER);
+        }
+    }
+
     public void stop() {
         try {
             if (turretMotor != null) turretMotor.setPower(0);
