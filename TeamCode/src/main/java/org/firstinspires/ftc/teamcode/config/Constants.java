@@ -128,7 +128,8 @@ public class Constants {
     public static class ShooterConfig {
         // Shooter wheel speeds (0.0 to 1.0) - better naming
         
-        public static double SHOOTER_RPM_NEAR = 2400;
+        //public static double SHOOTER_RPM_NEAR = 2400;
+        public static double SHOOTER_RPM_NEAR = 2500;
         public static double HOOD_POSITION_NEAR = 0.25;
         
         public static double SHOOTER_RPM_MEDIUM = 2650;
@@ -136,9 +137,10 @@ public class Constants {
         
         public static double SHOOTER_RPM_FAR = 3150;
 
-        public static double SHOOTER_RPM_FAR_AUTO = 3250;
+        public static double SHOOTER_RPM_FAR_AUTO = 3150;
         public static double HOOD_POSITION_FAR = 0.25;
         public static double SHOOTER_RPM_IDLE = 1500;
+        public static double HOOD_POSITION_FAR_AUTO = 0.5;
         
         
     }

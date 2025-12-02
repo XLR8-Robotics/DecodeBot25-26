@@ -31,7 +31,7 @@ public class AutoAimingTurret {
     private static final double P = 10.0;
     private static final double I = 0.0;
     private static final double D = 0.0;
-    private static final double F = 0.0;
+    private static final double F = 1;
     private static final double MAX_POWER = 0.8;
     private static final double TARGET_LOST_TIMEOUT = 2.0; // seconds
 
