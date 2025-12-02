@@ -1,99 +1,75 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
-import com.bylazar.configurables.annotations.Configurable;
-import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-import org.firstinspires.ftc.teamcode.pedropathing.Constants;
-import org.firstinspires.ftc.teamcode.subsystems.AutoAimingTurret;
+import org.firstinspires.ftc.teamcode.config.Constants;
 
-@TeleOp(name = "Turret PID & Ticks Tuner")
+@TeleOp(name = "Turret Encoder Calibration")
 public class TurretTuner extends LinearOpMode {
 
-    @Configurable
-    public static class TurretTuningConfig {
-        public static double P = 10.0;
-        public static double I = 0.0;
-        public static double D = 0.0;
-        public static double F = 0.0;
-        public static double oscillationAmplitude = 20.0;
-        public static double oscillationPeriod = 2.0;
-        public static double moveDegrees = 45.0;
-    }
-    private AutoAimingTurret turret;
-    private Follower follower;
+    private DcMotorEx turretMotor;
 
-    private boolean previousCrossState = false;
-    private boolean previousTriangleState = false;
-    private boolean previousSquareState = false;
-    private boolean previousCircleState = false;
+    private boolean prevA = false;
+    private boolean prevB = false;
+
+    private boolean startCaptured = false;
+    private int startTicks = 0;
+
+    // --- Set the actual rotation you will perform ---
+    private static final double ROTATION_DEGREES = 180.0;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
-        follower = Constants.createFollower(hardwareMap);
-        turret = new AutoAimingTurret(hardwareMap, follower);
+        // --- Initialize turret motor ---
+        turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
+        turretMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        turretMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        turretMotor.setPower(0);
 
-        telemetry.addLine("Turret Tuner Initialized. Press PLAY.");
+        telemetry.addLine("Turret Encoder Calibration Initialized!");
+        telemetry.addLine("Press A to capture start ticks, rotate turret by " + ROTATION_DEGREES + "°, press B to capture end ticks.");
         telemetry.update();
 
         waitForStart();
 
         while (opModeIsActive()) {
-            Gamepad g = gamepad1;
+            boolean a = gamepad1.a;
+            boolean b = gamepad1.b;
 
-            // --- Apply PIDF dynamically from Panels ---
-            turret.setPIDF(
-                    TurretTuningConfig.P,
-                    TurretTuningConfig.I,
-                    TurretTuningConfig.D,
-                    TurretTuningConfig.F
-            );
-
-            // --- Debounced Oscillation for PID tuning (PS X button) ---
-            if (g.cross && !previousCrossState) {
-                turret.oscillateTurretForPID(
-                        TurretTuningConfig.oscillationAmplitude,
-                        TurretTuningConfig.oscillationPeriod
-                );
+            // --- Capture start ticks ---
+            if (a && !prevA) {
+                startTicks = turretMotor.getCurrentPosition();
+                startCaptured = true;
+                telemetry.addData("Start Ticks", startTicks);
+                telemetry.addLine("Now rotate turret by " + ROTATION_DEGREES + "° and press B.");
+                telemetry.update();
             }
-            previousCrossState = g.cross;
+            prevA = a;
 
-            // --- Debounced Move Fixed Degrees for ticks/degree (PS Triangle button) ---
-            if (g.triangle && !previousTriangleState) {
-                turret.moveTurretByDegrees(TurretTuningConfig.moveDegrees);
+            // --- Capture end ticks and calculate ENCODERTICKS ---
+            if (b && !prevB && startCaptured) {
+                int endTicks = turretMotor.getCurrentPosition();
+                int deltaTicks = endTicks - startTicks;
+
+                // Calculate encoder ticks for a full 360° rotation
+                double encoderTicks360 = (deltaTicks / ROTATION_DEGREES) * 360.0;
+                double ticksPerDegree = encoderTicks360 / 360.0; // just for clarity
+
+                telemetry.addData("End Ticks", endTicks);
+                telemetry.addData("Delta Ticks for " + ROTATION_DEGREES + "°", deltaTicks);
+                telemetry.addData("ENCODERTICKS for 360° rotation", encoderTicks360);
+                telemetry.addData("TICKS_PER_DEGREE", ticksPerDegree);
+                telemetry.addLine("Use ENCODERTICKS in your turret class: " + encoderTicks360);
+                telemetry.update();
+
+                startCaptured = false;
             }
-            previousTriangleState = g.triangle;
+            prevB = b;
 
-            // --- Debounced Shooter Blocker Control ---
-            if (g.square && !previousSquareState) turret.setShooterBlocked();
-            previousSquareState = g.square;
-
-            if (g.circle && !previousCircleState) turret.setShooterUnBlocked();
-            previousCircleState = g.circle;
-
-            // --- Telemetry for Panels dashboard ---
-            telemetry.addData("Turret Current Angle", "%.2f deg", turret.getCurrentTurretAngle());
-            telemetry.addData("Desired Angle", "%.2f deg", turret.getDesiredTurretAngle());
-            telemetry.addData("Last Target Field Angle", "%.2f deg", turret.getLastKnownTargetAngleField());
-            telemetry.addData("Target Visible", turret.getHasValidTarget());
-            telemetry.addData("Turret Status", turret.getTurretStatus());
-            telemetry.addData("Left Limit Switch", turret.isLeftLimitPressed());
-            telemetry.addData("Right Limit Switch", turret.isRightLimitPressed());
-            telemetry.addData("Oscillation Amplitude", TurretTuningConfig.oscillationAmplitude);
-            telemetry.addData("Oscillation Period", TurretTuningConfig.oscillationPeriod);
-            telemetry.addData("Move Degrees", TurretTuningConfig.moveDegrees);
-            telemetry.addData("PIDF", "P=%.2f I=%.2f D=%.2f F=%.2f",
-                    TurretTuningConfig.P,
-                    TurretTuningConfig.I,
-                    TurretTuningConfig.D,
-                    TurretTuningConfig.F
-            );
-            telemetry.update();
-
-            sleep(20); // prevent crash
+            sleep(20);
         }
     }
 }

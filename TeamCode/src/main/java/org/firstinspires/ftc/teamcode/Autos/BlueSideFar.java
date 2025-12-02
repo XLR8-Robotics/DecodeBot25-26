@@ -9,14 +9,13 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-import java.util.Timer;
-
-@Autonomous(name = "Simple One Path Auto", group = "Opmode")
-public class DecodeFirstAuto extends LinearOpMode {
+@Autonomous(name = "Blue Side Far", group = "Opmode")
+public class BlueSideFar extends LinearOpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
 

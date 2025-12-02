@@ -14,23 +14,20 @@ import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-@Autonomous(name = "Red Side Near", group = "Opmode")
-public class RedSideNear extends LinearOpMode {
+@Autonomous(name = "Blue Side Near", group = "Opmode")
+public class BlueSideNear extends LinearOpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
 
     private Robot robot;
-    // Define start and target poses
 
-
-
-    private final Pose startPose = new Pose(152, 123, Math.toRadians(45)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(115, 89, Math.toRadians(44)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
-    private final Pose PPGPose = new Pose(134, 84, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose PGPPose = new Pose(164, 84, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose GPPPose = new Pose(100, 35.5, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
-    private final Pose targetPose = new Pose(72, 20, Math.toRadians(90)); // Example target
-    private final Pose scorePose2 = new Pose(117, 91, Math.toRadians(30));
+    private final Pose startPose = new Pose(-152, 123, Math.toRadians(135)); // Start Pose of our robot.
+    private final Pose scorePose = new Pose(-115, 89, Math.toRadians(135)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
+    private final Pose PPGPose = new Pose(-134, 84, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose PGPPose = new Pose(-164, 84, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose GPPPose = new Pose(-100, 35.5, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
+    private final Pose targetPose = new Pose(-72, 20, Math.toRadians(90)); // Example target
+    private final Pose scorePose2 = new Pose(-117, 91, Math.toRadians(135));
 
     private PathChain simplePath;
     private Follower follower;

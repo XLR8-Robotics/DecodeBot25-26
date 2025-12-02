@@ -9,13 +9,12 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-@Autonomous(name = "Red Side Near", group = "Opmode")
-public class RedSideNear extends LinearOpMode {
+@Autonomous(name = "Red Side Far", group = "Opmode")
+public class RedSideFar extends LinearOpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
 
@@ -24,13 +23,13 @@ public class RedSideNear extends LinearOpMode {
 
 
 
-    private final Pose startPose = new Pose(152, 123, Math.toRadians(45)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(115, 89, Math.toRadians(44)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
-    private final Pose PPGPose = new Pose(134, 84, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose PGPPose = new Pose(164, 84, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose startPose = new Pose(115, -24, Math.toRadians(90)); // Start Pose of our robot.
+    private final Pose scorePose = new Pose(110, -10, Math.toRadians(73)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
+    private final Pose PPGPose = new Pose(143, 8, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose PGPPose = new Pose(100, 59.5, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose GPPPose = new Pose(100, 35.5, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
     private final Pose targetPose = new Pose(72, 20, Math.toRadians(90)); // Example target
-    private final Pose scorePose2 = new Pose(117, 91, Math.toRadians(30));
+
 
     private PathChain simplePath;
     private Follower follower;
@@ -55,7 +54,7 @@ public class RedSideNear extends LinearOpMode {
         waitForStart();
 
         robot = new Robot(hardwareMap);
-        robot.shooter.applyState(Shooter.ShooterStates.NEAR);
+        robot.shooter.applyState(Shooter.ShooterStates.FARAUTO);
         robot.shooter.setPIDFCoefficients(40 , 0, 2.5, 12);
         while (opModeIsActive()) {
             follower.update();
@@ -78,34 +77,7 @@ public class RedSideNear extends LinearOpMode {
                     break;
                 case 3:
                     follower.followPath(buildPath(scorePose, PPGPose));
-                    pathState = 4;
                     break;
-                case 4:
-                    if(!follower.isBusy())
-                    {
-                        intakeStart();
-                        pathState = 5;
-                    }
-                    break;
-                case 5:
-                    follower.followPath(buildPath(PPGPose, PGPPose));
-                    pathState = 6;
-                case 6:
-                    if(!follower.isBusy())
-                    {
-                        intakeStop();
-                        pathState = 7;
-                    }
-                    break;
-                case 7 :
-                    follower.followPath(buildPath(PGPPose, scorePose2));
-                    pathState = 8;
-                case 8:
-                    if(!follower.isBusy())
-                    {
-                        shootArtifacts();
-                        pathState = -1;
-                    }
             }
 
             // Optional telemetry

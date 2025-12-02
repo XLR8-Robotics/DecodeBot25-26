@@ -1,43 +1,74 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
-import com.bylazar.field.FieldManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
+import org.firstinspires.ftc.teamcode.pedropathing.Drawing;
 
 @TeleOp(name = "TeleOpWithAutoAiming", group = "Game")
-public class TeleOpWithAutoAim extends LinearOpMode {
-    private Robot robot;
-    private FieldManager panelsField;
-    @Override
-    public void runOpMode() throws InterruptedException {
+public class TeleOpWithAutoAim extends OpMode {
 
-        Follower follower = Constants.createFollower(hardwareMap);
+    private Robot robot;
+    private Follower follower;
+
+    @Override
+    public void init() {
+        // Initialize follower and set starting pose
+        follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
+
+        // Initialize robot
         robot = new Robot(hardwareMap, follower);
 
-        while (!isStarted() && !isStopRequested()) {
-            follower.update();
-        }
-        
-        waitForStart();
+        // Initialize Drawing system
+        Drawing.init();
 
-        while (opModeIsActive()) {
-            robot.UpdateGamePad1(gamepad1);
-            robot.UpdateGamePad2AutoAim(gamepad2);
-            robot.RunAutoAim();
-            displayTelemetry();
-        }
+        telemetry.addLine("TeleOpWithAutoAim Initialized");
+        telemetry.update();
     }
+
+    @Override
+    public void init_loop() {
+        follower.update();
+        // Draw starting position
+        Drawing.drawDebug(follower);
+    }
+
+    @Override
+    public void start() {
+        // Start any timers or robot systems if needed
+    }
+
+    @Override
+    public void loop() {
+        // Update gamepads
+        robot.UpdateGamePad1(gamepad1);
+        robot.UpdateGamePad2AutoAim(gamepad2);
+
+        // Run auto-aim logic
+        robot.RunAutoAim();
+
+        // Update follower
+        follower.update();
+
+        // Draw current position, turret heading, and path history
+        Drawing.drawDebug(follower);
+
+        // Update telemetry
+        displayTelemetry();
+    }
+
     private void displayTelemetry() {
         displayAutoAimTelemetry();
         displayMotorAndServoTelemetry();
         displaySensorTelemetry();
         telemetry.update();
     }
+
     private void displayMotorAndServoTelemetry() {
         telemetry.addData("=== MOTORS & SERVOS ===", "");
         telemetry.addData("Shooter Power", "%.2f", robot.shooter.getMotorPower());
@@ -46,13 +77,14 @@ public class TeleOpWithAutoAim extends LinearOpMode {
         telemetry.addData("Shooter Stopper Position", "%.2f", robot.turret.getShooterBlockerPosition());
         telemetry.addData("Shooter States", robot.shooter.getCurrentState());
     }
+
     private void displaySensorTelemetry() {
         telemetry.addData("=== SENSORS ===", "");
         telemetry.addData("Turret Left Limit", robot.turret.isLeftLimitPressed() ? "PRESSED" : "Open");
         telemetry.addData("Turret Right Limit", robot.turret.isRightLimitPressed() ? "PRESSED" : "Open");
     }
-    private void displayAutoAimTelemetry() {
 
+    private void displayAutoAimTelemetry() {
         telemetry.addData("=== Auto Aiming Turret Statuses ===", "");
         telemetry.addData("Target Visible", robot.autoAimingTurret.getHasValidTarget());
         telemetry.addData("Status", robot.autoAimingTurret.getTurretStatus());
@@ -63,7 +95,5 @@ public class TeleOpWithAutoAim extends LinearOpMode {
         telemetry.addData("Last Field Angle", "%.2f", robot.autoAimingTurret.getLastKnownTargetAngleField());
         telemetry.addData("Desired Turret Angle", "%.2f", robot.autoAimingTurret.getDesiredTurretAngle());
         telemetry.addData("Target Lost Timer", "%.2f", robot.autoAimingTurret.getTargetLostTimer());
-
     }
 }
-
