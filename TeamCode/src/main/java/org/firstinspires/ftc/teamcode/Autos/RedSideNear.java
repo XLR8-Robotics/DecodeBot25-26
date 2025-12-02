@@ -55,7 +55,7 @@ public class RedSideNear extends LinearOpMode {
         waitForStart();
 
         robot = new Robot(hardwareMap);
-        robot.shooter.applyState(Shooter.ShooterStates.NEAR);
+        robot.shooter.applyState(Shooter.ShooterAutoStates.NEAR);
         robot.shooter.setPIDFCoefficients(40 , 0, 2.5, 12);
         while (opModeIsActive()) {
             follower.update();

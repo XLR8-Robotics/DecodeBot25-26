@@ -21,13 +21,25 @@ public class Shooter {
     public enum ShooterStates {
         NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
         //MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
-        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR),
-        FARAUTO(Constants.ShooterConfig.SHOOTER_RPM_FAR_AUTO, Constants.ShooterConfig.HOOD_POSITION_FAR_AUTO);
-
+        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR);
         public final double rpm;
         public final double hoodPosition;
 
         ShooterStates(double rpm, double hoodPosition) {
+            this.rpm = rpm;
+            this.hoodPosition = hoodPosition;
+        }
+    }
+
+    public enum ShooterAutoStates{
+        NEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
+        MIDDLE(Constants.ShooterConfig.SHOOTER_RPM_MEDIUM, Constants.ShooterConfig.HOOD_POSITION_MEDIUM),
+        FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR),
+        FARAUTO(Constants.ShooterConfig.SHOOTER_RPM_FAR_AUTO, Constants.ShooterConfig.HOOD_POSITION_FAR_AUTO);
+        public final double rpm;
+        public final double hoodPosition;
+
+        ShooterAutoStates(double rpm, double hoodPosition) {
             this.rpm = rpm;
             this.hoodPosition = hoodPosition;
         }
@@ -39,7 +51,6 @@ public class Shooter {
         FAR
     }
     public String cState;
-    
     private int currentStateIndex = 0;
     private boolean previousIncrementStateInput = false;
     private boolean previousDecrementStateInput = false;
@@ -70,6 +81,11 @@ public class Shooter {
     }
     
     public void applyState(ShooterStates state) {
+        setRPM(state.rpm);
+        setHoodPosition(state.hoodPosition);
+    }
+
+    public void applyState(ShooterAutoStates state) {
         setRPM(state.rpm);
         setHoodPosition(state.hoodPosition);
     }

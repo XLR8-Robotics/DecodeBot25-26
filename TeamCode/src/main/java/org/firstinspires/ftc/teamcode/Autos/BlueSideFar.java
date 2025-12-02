@@ -55,7 +55,7 @@ public class BlueSideFar extends LinearOpMode {
         waitForStart();
 
         robot = new Robot(hardwareMap);
-        robot.shooter.applyState(Shooter.ShooterStates.FARAUTO);
+        robot.shooter.applyState(Shooter.ShooterAutoStates.FARAUTO);
         robot.shooter.setPIDFCoefficients(40 , 0, 2.5, 12);
         while (opModeIsActive()) {
             follower.update();
