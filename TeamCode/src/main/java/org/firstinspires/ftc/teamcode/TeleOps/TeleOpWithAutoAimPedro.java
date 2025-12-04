@@ -8,11 +8,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
 
-@TeleOp(name = "TeleOpWithAutoAiming", group = "Game")
-public class TeleOpWithAutoAim extends OpMode {
+@TeleOp(name = "TeleOpWithAutoAimingPedro", group = "Game")
+public class TeleOpWithAutoAimPedro extends OpMode {
 
     private Robot robot;
     private Follower follower;
+
+    private boolean slowMode = false;
+    private double slowModeMultiplier = 0.5;
 
     @Override
     public void init() {
@@ -20,11 +23,10 @@ public class TeleOpWithAutoAim extends OpMode {
         follower = Constants.createFollower(hardwareMap);
         robot = new Robot(hardwareMap, follower);
 
-        // Set robot starting pose (x, y, heading in radians)
         follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
         follower.update();
 
-        telemetry.addLine("TeleOpWithAutoAim Initialized");
+        telemetry.addLine("TeleOpWithAutoAimPedro Initialized");
         telemetry.update();
     }
 
@@ -33,20 +35,38 @@ public class TeleOpWithAutoAim extends OpMode {
 
     @Override
     public void start() {
+        // Start Pedro Pathing teleop drive
+        follower.startTeleopDrive();
         resetRuntime();
     }
 
     @Override
     public void loop() {
-        // Update gamepads
-        robot.UpdateGamePad1(gamepad1);             // Drive + intake
-        robot.UpdateGamePad2AutoAim(gamepad2);     // Shooter + turret manual
+        // Update turret, shooter, and intake
+        robot.UpdateGamePad2AutoAim(gamepad2);
 
         // Run auto-aim logic
         robot.RunAutoAim();
 
-        // Update follower heading
+        // Update Pedro Pathing follower
         follower.update();
+
+        // TeleOp drive inputs
+        double driveY = -gamepad1.left_stick_y;  // forward/back
+        double driveX = -gamepad1.left_stick_x;  // left/right
+        double turn = -gamepad1.right_stick_x;   // rotation
+
+        // Slow mode toggle (right bumper)
+        slowMode = gamepad1.right_bumper;
+
+        if (slowMode) {
+            driveY *= slowModeMultiplier;
+            driveX *= slowModeMultiplier;
+            turn *= slowModeMultiplier;
+        }
+
+        // Field-centric drive (true = robot-centric, false = field-centric)
+        follower.setTeleOpDrive(driveY, driveX, turn, false);
 
         // Update telemetry
         displayTelemetry();

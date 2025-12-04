@@ -4,14 +4,12 @@ import com.pedropathing.follower.Follower;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 import java.util.List;
@@ -28,13 +26,19 @@ public class AutoAimingTurret {
     private final Servo shooterBlocker;
 
     // --- Constants ---
-    private static final double DEGREES = 360;
-    private static final double ENCODERTICKS = 537.7;
     private static final double TICKS_PER_DEGREE = 5.87;
     private static final double MAX_POWER = 0.8;
     private static final double RECENTER_POWER = 0.4;
     private static final double TARGET_LOST_TIMEOUT = 2.0;
     private static final double HOME_ANGLE = 0.0;
+
+    // --- Dynamic zero calibration ---
+    private double zeroOffset = 0.0;
+    private boolean zeroCalibrated = false;
+
+    // --- Safe turret sweep (0–360° system) ---
+    private static final double MAX_RIGHT = 55.0;  // clockwise from back
+    private static final double MAX_LEFT  = 305.0; // counter-clockwise from back
 
     // --- State ---
     private boolean targetWasVisible = false;
@@ -79,6 +83,7 @@ public class AutoAimingTurret {
         targetLostTimer.reset();
     }
 
+    // --- Limit switch helpers ---
     private boolean leftPressed() { return !limitLeft.getState(); }
     private boolean rightPressed() { return !limitRight.getState(); }
 
@@ -88,87 +93,110 @@ public class AutoAimingTurret {
         return list != null && list.size() > 0;
     }
 
+    // ===================================================================
+    // AUTO AIM MAIN LOOP
+    // ===================================================================
     public void runTurret() {
+
         robotHeading = Math.toDegrees(follower.getHeading());
         turretAngle = turretMotor.getCurrentPosition() / TICKS_PER_DEGREE;
 
         LLResult result = limelight.getLatestResult();
         boolean valid = hasValidTarget(result);
 
+        // -------------------------------
+        // 🟦 One-time ZERO calibration
+        // -------------------------------
+        if (valid && !zeroCalibrated) {
+            double tx = result.getFiducialResults().get(0).getTargetXDegrees();
+            if (Math.abs(tx) < 3.0) { // calibrate only if near center
+                zeroOffset = robotHeading + turretAngle + tx;
+                zeroCalibrated = true;
+                turretStatus = "Zero Calibrated";
+            }
+        }
+
+        // -------------------------------
+        // 🔵 Target visible
+        // -------------------------------
         if (valid) {
             double tx = result.getFiducialResults().get(0).getTargetXDegrees();
-            lastKnownFieldAngle = robotHeading + turretAngle + tx;
+            lastKnownFieldAngle = robotHeading + turretAngle + zeroOffset + tx;
             targetWasVisible = true;
             targetLostTimer.reset();
         }
 
+        // -------------------------------
+        // 🟢 Tracking mode
+        // -------------------------------
         if (targetWasVisible && targetLostTimer.seconds() < TARGET_LOST_TIMEOUT) {
             turretStatus = "Tracking";
 
-            desiredTurretAngle = lastKnownFieldAngle - robotHeading;
-            int targetTicks = (int) (desiredTurretAngle * TICKS_PER_DEGREE);
+            desiredTurretAngle = lastKnownFieldAngle - robotHeading - zeroOffset;
 
+            // Convert to 0–360 range
+            double desired360 = (desiredTurretAngle + 360) % 360;
+
+            // Clamp into triangle-safe arc
+            if (desired360 > MAX_RIGHT && desired360 < MAX_LEFT) {
+                desired360 = (desired360 > 180) ? MAX_LEFT : MAX_RIGHT;
+            }
+
+            int targetTicks = (int)(desired360 * TICKS_PER_DEGREE);
+
+            // Limit switches hard stop
             if ((targetTicks < turretMotor.getCurrentPosition() && leftPressed()) ||
                     (targetTicks > turretMotor.getCurrentPosition() && rightPressed())) {
                 turretMotor.setPower(0);
-                return;
+            } else {
+                turretMotor.setTargetPosition(targetTicks);
+                turretMotor.setPower(MAX_POWER);
             }
+            return;
+        }
 
-            turretMotor.setTargetPosition(targetTicks);
-            turretMotor.setPower(MAX_POWER);
-        } else {
-            turretStatus = "Searching";
+        // -------------------------------
+        // 🔴 No target → recenter
+        // -------------------------------
+        turretStatus = "Searching";
 
-            double error = HOME_ANGLE - turretAngle;
-            int homeTicks = (int) (HOME_ANGLE * TICKS_PER_DEGREE);
+        double error = HOME_ANGLE - turretAngle;
+        int homeTicks = (int)(HOME_ANGLE * TICKS_PER_DEGREE);
 
-            if (Math.abs(error) > 1.0) {
-                if ((error < 0 && !leftPressed()) || (error > 0 && !rightPressed())) {
-                    turretMotor.setTargetPosition(homeTicks);
-                    turretMotor.setPower(RECENTER_POWER);
-                } else {
-                    turretMotor.setPower(0);
-                }
+        if (Math.abs(error) > 1.0) {
+            if ((error < 0 && !leftPressed()) || (error > 0 && !rightPressed())) {
+                turretMotor.setTargetPosition(homeTicks);
+                turretMotor.setPower(RECENTER_POWER);
             } else {
                 turretMotor.setPower(0);
             }
+        } else {
+            turretMotor.setPower(0);
         }
     }
 
-    // --- Manual Controls ---
+    // ===================================================================
+    // Manual controls
+    // ===================================================================
     public void manualUpdate(Gamepad gp) {
+
         if (gp.square && !previousSquare) {
             shooterBlocked = !shooterBlocked;
-            shooterBlocker.setPosition(shooterBlocked ?
-                    Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION :
-                    Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+            shooterBlocker.setPosition(
+                    shooterBlocked ?
+                            Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION :
+                            Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION
+            );
         }
         previousSquare = gp.square;
 
+        // Pipeline toggle
         if (gp.start && !previousPipelineToggle) {
             currentPipeline = (currentPipeline == 0 ? 1 : 0);
             limelight.pipelineSwitch(currentPipeline);
             gp.rumble(100);
         }
         previousPipelineToggle = gp.start;
-    }
-
-    public void manualNudgeButtons(Gamepad gamepad, double nudgePower) {
-        boolean leftNudge = gamepad.left_bumper;  // L1
-        boolean rightNudge = gamepad.right_bumper; // R1
-
-        if (leftNudge || rightNudge) {
-            turretMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-
-            double power = 0;
-            if (leftNudge && !leftPressed()) power = -nudgePower;
-            if (rightNudge && !rightPressed()) power = nudgePower;
-
-            turretMotor.setPower(power);
-        } else {
-            turretMotor.setPower(0);
-            turretMotor.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        }
     }
 
     public void stop() {
@@ -178,7 +206,9 @@ public class AutoAimingTurret {
         } catch (Exception ignored) { }
     }
 
-    // --- Getters for telemetry ---
+    // ===================================================================
+    // TELEMETRY GETTERS (unchanged)
+    // ===================================================================
     public double getCurrentRobotHeading() { return robotHeading; }
     public double getCurrentTurretAngle() { return turretAngle; }
     public double getDesiredTurretAngle() { return desiredTurretAngle; }
@@ -189,4 +219,5 @@ public class AutoAimingTurret {
     public boolean isLeftLimitPressed() { return leftPressed(); }
     public boolean isRightLimitPressed() { return rightPressed(); }
     public boolean isShooterBlocked() { return shooterBlocked; }
+    public double getShooterBlockerPosition() { return shooterBlocker.getPosition(); }
 }
