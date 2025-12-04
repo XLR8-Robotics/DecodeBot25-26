@@ -44,6 +44,7 @@ public class RedSideFar extends LinearOpMode {
         // Initialize Pedro Pathing follower
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
+        Paths paths = new Paths(follower);
 
         // Reset runtime
         runtime.reset();
@@ -78,6 +79,74 @@ public class RedSideFar extends LinearOpMode {
                 case 3:
                     follower.followPath(buildPath(scorePose, PPGPose));
                     break;
+                case 4:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path3);
+                        pathState = 5;
+                        intakeStart();
+                    }
+                    break;
+                case 5:
+                    if(!follower.isBusy()) {
+                        intakeStop();
+                        pathState = 6;
+                    }
+                    break;
+                case 6:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path4);
+                        pathState = 7;
+
+                    }
+                    break;
+                case 7:
+                    if(!follower.isBusy())
+                    {
+                        shootArtifacts();
+                        pathState = 8;
+                    }
+                    break;
+                case 8:
+                    follower.followPath(paths.Path5);
+                    pathState = 9;
+                    intakeStart();
+                    break;
+                case 9:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path6);
+                        pathState = 10;
+
+                    }
+                    break;
+                case 10:
+                    if(!follower.isBusy()) {
+                        delayTime(2000);
+                        intakeStop();
+                        pathState = 11;
+                    }
+                    break;
+                case 11:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path7);
+                        pathState = 12;
+
+                    }
+                    break;
+                case 12:
+                    if(!follower.isBusy())
+                    {
+                        shootArtifacts();
+                        pathState = 13;
+                    }
+                    break;
+                case 13:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path8);
+                        pathState = -1;
+
+                    }
+                    break;
+
             }
 
             // Optional telemetry
@@ -133,6 +202,80 @@ public class RedSideFar extends LinearOpMode {
         while(timer.milliseconds() <= delayTime)
         {
              wait = "wait";
+        }
+    }
+
+    public static class Paths {
+
+        public PathChain Path1;
+        public PathChain Path2;
+        public PathChain Path3;
+        public PathChain Path4;
+        public PathChain Path5;
+        public PathChain Path6;
+        public PathChain Path7;
+        public PathChain Path8;
+
+
+        public Paths(Follower follower) {
+            Path1 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(55.300, 7.521), new Pose(62.244, 10.687))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(117.5))
+                    .build();
+
+            Path2 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(62.244, 10.687), new Pose(52.470, 22.276))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(180))
+                    .build();
+
+            Path3 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(52.470, 22.276), new Pose(19.378, 22.276))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(180))
+                    .build();
+
+            Path4 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(19.378, 22.276), new Pose(60.470, 6.276))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(125))
+                    .build();
+
+            Path5 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(60.470, 6.276), new Pose(30.963, 38.198))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(245))
+                    .build();
+
+            Path6 = follower
+                    .pathBuilder()
+                    .addPath(new BezierLine(new Pose(30.963, 38.198), new Pose(30.742, 3.963)))
+                    .setConstantHeadingInterpolation(Math.toRadians(245))
+                    .build();
+
+            Path7 = follower
+                    .pathBuilder()
+                    .addPath(new BezierLine(new Pose(30.742, 3.963), new Pose(60.244, 8.687)))
+                    .setConstantHeadingInterpolation(Math.toRadians(119))
+                    .build();
+            Path8 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(60.244, 8.687), new Pose(38.931, 12.166))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(90))
+                    .build();
         }
     }
 }

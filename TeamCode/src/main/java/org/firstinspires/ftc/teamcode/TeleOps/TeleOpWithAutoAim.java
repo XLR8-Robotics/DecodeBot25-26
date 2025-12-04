@@ -19,7 +19,6 @@ public class TeleOpWithAutoAim extends OpMode {
         // Initialize follower and set starting pose
         follower = Constants.createFollower(hardwareMap);
         robot = new Robot(hardwareMap, follower);
-
         follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
         follower.update();
 
@@ -28,13 +27,10 @@ public class TeleOpWithAutoAim extends OpMode {
     }
 
     @Override
-    public void init_loop() {
-
-        // Draw starting position
-    }
+    public void init_loop() {}
 
     @Override
-    public void start() {resetRuntime();// Start any timers or robot systems if needed
+    public void start() {resetRuntime();
     }
 
     @Override
@@ -42,15 +38,10 @@ public class TeleOpWithAutoAim extends OpMode {
         // Update gamepads
         robot.UpdateGamePad1(gamepad1);
         robot.UpdateGamePad2AutoAim(gamepad2);
-
         // Run auto-aim logic
         robot.RunAutoAim();
-
         // Update follower
         follower.update();
-
-        // Draw current position, turret heading, and path history
-
         // Update telemetry
         displayTelemetry();
     }
