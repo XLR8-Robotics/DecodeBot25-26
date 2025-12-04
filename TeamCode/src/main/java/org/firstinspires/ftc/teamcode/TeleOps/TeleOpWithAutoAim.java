@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Robot;
-import org.firstinspires.ftc.teamcode.pedropathing.Drawing;
 
 @TeleOp(name = "TeleOpWithAutoAiming", group = "Game")
 public class TeleOpWithAutoAim extends OpMode {
@@ -19,13 +18,10 @@ public class TeleOpWithAutoAim extends OpMode {
     public void init() {
         // Initialize follower and set starting pose
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
-
-        // Initialize robot
         robot = new Robot(hardwareMap, follower);
 
-        // Initialize Drawing system
-        Drawing.init();
+        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
+        follower.update();
 
         telemetry.addLine("TeleOpWithAutoAim Initialized");
         telemetry.update();
@@ -33,14 +29,12 @@ public class TeleOpWithAutoAim extends OpMode {
 
     @Override
     public void init_loop() {
-        follower.update();
+
         // Draw starting position
-        Drawing.drawDebug(follower);
     }
 
     @Override
-    public void start() {
-        // Start any timers or robot systems if needed
+    public void start() {resetRuntime();// Start any timers or robot systems if needed
     }
 
     @Override
@@ -56,7 +50,6 @@ public class TeleOpWithAutoAim extends OpMode {
         follower.update();
 
         // Draw current position, turret heading, and path history
-        Drawing.drawDebug(follower);
 
         // Update telemetry
         displayTelemetry();

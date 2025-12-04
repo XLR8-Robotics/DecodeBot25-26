@@ -55,7 +55,7 @@ public class Robot {
     }
     public void RunAutoAim()
     {
-        autoAimingTurret.RunTurret();
+        autoAimingTurret.runTurret();
     }
     public void UpdateGamePad1(Gamepad gamepad) {
         updateDriveControl(gamepad);
@@ -74,6 +74,7 @@ public class Robot {
     public void UpdateShootingControls(Gamepad gamepad) {
         shooter.update(gamepad);
         turret.manualUpdate(gamepad);
+        intake.update(gamepad);
     }
     public void UpdateShootingControlsAutoAim(Gamepad gamepad) {
         intake.update(gamepad);

@@ -30,7 +30,7 @@ public class AutoAimingTurret {
     // --- Constants ---
     private static final double DEGREES = 360;
     private static final double ENCODERTICKS = 537.7;
-    private static final double TICKS_PER_DEGREE =  ENCODERTICKS / DEGREES;
+    private static final double TICKS_PER_DEGREE = 5.87;
     private static final double MAX_POWER = 0.8;
     private static final double RECENTER_POWER = 0.4;
     private static final double TARGET_LOST_TIMEOUT = 2.0;
