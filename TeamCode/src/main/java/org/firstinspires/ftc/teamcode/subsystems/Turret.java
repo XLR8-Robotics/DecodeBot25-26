@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.control.PIDFCoefficients;
+import com.pedropathing.control.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -10,12 +12,19 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 
 
 public class Turret {
-    private final DcMotorEx turretMotor;
+    public final DcMotorEx turretMotor;
     private final Servo shooterBlocker;
     private final DigitalChannel turretLimitLeft;
     private final DigitalChannel turretLimitRight;
     private boolean isShooterBlocked = true;
     private boolean previousSquareButtonState = false;
+    double offset = 0;
+
+    private static final int TICKS_PER_REV = 4096;
+   // private static final int GEAR_RATIO = 6.25;
+
+
+    public PIDFController turretPID;
 
     public Turret(HardwareMap hardwareMap) {
         this.turretMotor = hardwareMap.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
@@ -34,7 +43,38 @@ public class Turret {
 
         // Start with the shooter blocker in the blocking position
         setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+
+        turretPID.setCoefficients(new PIDFCoefficients(0.01, 0, 0, 0)); //Set this
     }
+
+    public void setTargetPose(double deg){
+        double robotDeg = 180 - deg;
+        while (robotDeg > 360){robotDeg -= 360;}
+        while (robotDeg < 360){robotDeg += 360;}
+        turretPID.setTargetPosition((robotDeg + offset));
+    }
+
+    /*public void update(){
+        double curAngle = getAngle();
+
+        turretPID.updatePosition(curAngle);
+        setPower(turretPID.run());
+    }*/
+
+    /*public double ticksToDegrees(int ticks){
+        double motorRevs = ticks / (double) TICKS_PER_REV;
+      //  double turretRevs = motorRevs / GEAR_RATIO;
+        return turretRevs * 360.0;
+    }
+
+    public  double getAngle(){
+        return ticksToDegrees(turretMotor.getCurrentPosition());
+    }
+
+    public double getTicks() {
+        return turretMotor.getTargetPosition();
+    }*/
+
     public void manualUpdate(Gamepad gamepad) {
 
         double turretPower = 0;
