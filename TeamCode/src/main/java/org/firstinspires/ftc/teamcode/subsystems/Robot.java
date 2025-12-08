@@ -37,6 +37,9 @@ public class Robot {
     }
 
     private TargetSide currentTargetSide = TargetSide.BLUE;
+
+    private boolean autoAimEnabled = false;
+    private boolean previousSelect = false;
     // =================================================================================
     // CONSTRUCTORS
     // =================================================================================
@@ -53,9 +56,16 @@ public class Robot {
             this.follower = follower;
             this.autoAimingTurret = new AutoAimingTurret(hardwareMap, follower);
     }
-    public void RunAutoAim()
-    {
-        autoAimingTurret.runTurret();
+    public void runAutoAim(Gamepad gamepad) {
+        // Toggle auto-aim on/off when select is pressed
+        if (gamepad.options && !previousSelect) {
+            autoAimEnabled = !autoAimEnabled;
+        }
+        previousSelect = gamepad.options;
+
+        if (autoAimEnabled) {
+            autoAimingTurret.update();
+        }
     }
     public void UpdateGamePad1(Gamepad gamepad) {
         updateDriveControl(gamepad);
@@ -87,7 +97,6 @@ public class Robot {
     public void setTargetSide(TargetSide side) {
         this.currentTargetSide = side;
     }
-    public Follower getFollower() {
-        return follower;
-    }
+
+    public Follower getFollower() { return follower; }
 }

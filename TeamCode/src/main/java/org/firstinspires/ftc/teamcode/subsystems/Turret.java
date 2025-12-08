@@ -21,7 +21,7 @@ public class Turret {
     double offset = 0;
 
     private static final int TICKS_PER_REV = 4096;
-   // private static final int GEAR_RATIO = 6.25;
+    private static final double GEAR_RATIO = 6.25;
 
 
     public PIDFController turretPID;
@@ -54,16 +54,16 @@ public class Turret {
         turretPID.setTargetPosition((robotDeg + offset));
     }
 
-    /*public void update(){
+    public void update(){
         double curAngle = getAngle();
 
         turretPID.updatePosition(curAngle);
         setPower(turretPID.run());
-    }*/
+    }
 
-    /*public double ticksToDegrees(int ticks){
+    public double ticksToDegrees(int ticks){
         double motorRevs = ticks / (double) TICKS_PER_REV;
-      //  double turretRevs = motorRevs / GEAR_RATIO;
+        double turretRevs = motorRevs / GEAR_RATIO;
         return turretRevs * 360.0;
     }
 
@@ -73,7 +73,7 @@ public class Turret {
 
     public double getTicks() {
         return turretMotor.getTargetPosition();
-    }*/
+    }
 
     public void manualUpdate(Gamepad gamepad) {
 
