@@ -57,15 +57,7 @@ public class Robot {
             this.autoAimingTurret = new AutoAimingTurret(hardwareMap, follower);
     }
     public void runAutoAim(Gamepad gamepad) {
-        // Toggle auto-aim on/off when select is pressed
-        if (gamepad.options && !previousSelect) {
-            autoAimEnabled = !autoAimEnabled;
-        }
-        previousSelect = gamepad.options;
-
-        if (autoAimEnabled) {
-            autoAimingTurret.update();
-        }
+        autoAimingTurret.update();
     }
     public void UpdateGamePad1(Gamepad gamepad) {
         updateDriveControl(gamepad);
@@ -79,7 +71,7 @@ public class Robot {
     public void updateDriveControl(Gamepad gamepad) {
 
         intake.updateIntake(gamepad);
-        basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
+        basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.left_stick_x, -gamepad.right_stick_x);
     }
     public void UpdateShootingControls(Gamepad gamepad) {
         shooter.update(gamepad);

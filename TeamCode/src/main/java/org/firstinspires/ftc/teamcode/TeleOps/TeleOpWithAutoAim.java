@@ -19,6 +19,8 @@ public class TeleOpWithAutoAim extends OpMode {
         // Initialize follower and set starting pose
         follower = Constants.createFollower(hardwareMap);
         robot = new Robot(hardwareMap, follower);
+        robot.autoAimingTurret.setTarget(159.23, 129.69);
+        robot.shooter.setRPM(0);
 
         // Set robot starting pose (x, y, heading in radians)
         follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
@@ -68,8 +70,7 @@ public class TeleOpWithAutoAim extends OpMode {
 
     private void displaySensorTelemetry() {
         telemetry.addData("=== SENSORS ===", "");
-        telemetry.addData("Turret Left Limit", robot.autoAimingTurret.isLeftLimitPressed() ? "PRESSED" : "Open");
-        telemetry.addData("Turret Right Limit", robot.autoAimingTurret.isRightLimitPressed() ? "PRESSED" : "Open");
+
     }
 
     private void displayAutoAimTelemetry() {
