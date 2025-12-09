@@ -46,6 +46,14 @@ public class AutoAimingTurret {
     // Shot correction (offset based on distance)
     public static double SHOT_OFFSET_COEFFICIENT = 1.5;
 
+    // Vision frame alignment (Limelight botpose is meters; Pedro uses inches with a corner origin)
+    // Limelight botpose is field-centered (0,0 at center, meters). Pedro uses inches from bottom-left corner.
+    public static double LIMELIGHT_FIELD_X_OFFSET_IN = 72.0;   // center -> +72" to corner in X
+    public static double LIMELIGHT_FIELD_Y_OFFSET_IN = 72.0;   // center -> +72" to corner in Y
+    public static double LIMELIGHT_HEADING_OFFSET_DEG = 0.0;   // set if yaw frames differ (0 if aligned)
+    public static double VISION_POS_THRESHOLD_IN = 2.0;       // minimum delta before applying pose correction
+    public static double VISION_HEADING_THRESHOLD_DEG = 2.0;  // heading delta threshold for correction
+
     public static boolean ENABLE_TRACKING = true;
     public static boolean ENABLE_VISION_CORRECTION = true;
 
@@ -96,7 +104,7 @@ public class AutoAimingTurret {
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // IMPORTANT → Fixes the "moves only left" issue
-        //motor.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         pid = new PIDFController(new PIDFCoefficients(P, I, D, F));
 
@@ -226,13 +234,21 @@ public class AutoAimingTurret {
         Pose3D bot = r.getBotpose();
         if (bot == null) return;
 
-        double x = bot.getPosition().x;
-        double y = bot.getPosition().y;
-        double yaw = bot.getOrientation().getYaw();
+        // Limelight botpose is in meters, field-centered. Convert to inches and apply optional offsets
+        double xIn = bot.getPosition().x * 39.3701 + LIMELIGHT_FIELD_X_OFFSET_IN;
+        double yIn = bot.getPosition().y * 39.3701 + LIMELIGHT_FIELD_Y_OFFSET_IN;
 
-        if (Math.hypot(x - current.getX(), y - current.getY()) > 0.06 ||
-                Math.abs(yaw - headingDeg) > 2) {
-            follower.setPose(new Pose(x, y, yaw));
+        // Yaw from Limelight is radians; convert to degrees for comparison, keep radians for follower
+        double yawRad = bot.getOrientation().getYaw();
+        double yawDeg = Math.toDegrees(yawRad) + LIMELIGHT_HEADING_OFFSET_DEG;
+        yawRad = Math.toRadians(yawDeg); // keep follower pose consistent with any heading offset
+
+        double dx = xIn - current.getX();
+        double dy = yIn - current.getY();
+
+        if (Math.hypot(dx, dy) > VISION_POS_THRESHOLD_IN ||
+                Math.abs(yawDeg - headingDeg) > VISION_HEADING_THRESHOLD_DEG) {
+            follower.setPose(new Pose(xIn, yIn, yawRad));
         }
     }
 
