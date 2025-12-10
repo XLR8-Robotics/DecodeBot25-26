@@ -165,6 +165,9 @@ public class AutoAimingTurret {
         targetY = y;
     }
 
+    public double getTargetX() { return targetX; }
+    public double getTargetY() { return targetY; }
+
     // =====================================================================
     // -------------------------- MAIN UPDATE LOOP --------------------------
     // =====================================================================

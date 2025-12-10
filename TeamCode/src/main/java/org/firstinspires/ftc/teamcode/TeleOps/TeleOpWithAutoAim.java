@@ -22,8 +22,8 @@ public class TeleOpWithAutoAim extends OpMode {
         robot.autoAimingTurret.setTarget(159.23, 129.69);
         robot.shooter.setRPM(0);
 
-        // Set robot starting pose (x, y, heading in radians)
-        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
+        // Set robot starting pose (x, y, heading in radians) — back wall at y = 0
+        follower.setStartingPose(new Pose(72, 0, Math.toRadians(90)));
         follower.update();
 
         telemetry.addLine("TeleOpWithAutoAim Initialized");
@@ -75,6 +75,22 @@ public class TeleOpWithAutoAim extends OpMode {
 
     private void displayAutoAimTelemetry() {
         telemetry.addData("=== Auto Aiming Turret Statuses ===", "");
+        Pose pose = follower.getPose();
+        double headingDeg = Math.toDegrees(follower.getHeading());
+        double turretAngle = robot.autoAimingTurret.getAngle();
 
+        double targetX = robot.autoAimingTurret.getTargetX();
+        double targetY = robot.autoAimingTurret.getTargetY();
+
+        double fieldAngle = Math.toDegrees(Math.atan2(
+                targetY - pose.getY(),
+                targetX - pose.getX()
+        ));
+
+        double turretTarget = ((fieldAngle - headingDeg + 180) % 360 + 360) % 360;
+
+        telemetry.addData("Bot Pose (in)", "X: %.1f  Y: %.1f  Heading: %.1f deg", pose.getX(), pose.getY(), headingDeg);
+        telemetry.addData("Turret", "Angle: %.1f deg  TargetAngle: %.1f deg", turretAngle, turretTarget);
+        telemetry.addData("Aim Target (in)", "X: %.1f  Y: %.1f", targetX, targetY);
     }
 }
