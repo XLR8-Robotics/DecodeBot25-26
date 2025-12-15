@@ -81,7 +81,6 @@ public class Robot {
     public void UpdateShootingControlsAutoAim(Gamepad gamepad) {
         intake.update(gamepad);
         shooter.update(gamepad);
-        autoAimingTurret.manualUpdate(gamepad);
     }
     public TargetSide getTargetSide() {
         return currentTargetSide;

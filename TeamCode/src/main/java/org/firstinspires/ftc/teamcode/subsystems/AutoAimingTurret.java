@@ -9,83 +9,54 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.control.PIDFCoefficients;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
-
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 @Config
 public class AutoAimingTurret {
 
     // =====================================================================
-    // -------------------------- CONFIG TUNABLE ----------------------------
+    // -------------------------- LIVE TUNABLE -----------------------------
     // =====================================================================
+    public static double P = 0.006;
+    public static double I = 0.0;
+    public static double D = 0.00025;
+    public static double F = 0.0;
 
-    public static double P = 0.012;
-    public static double I = 0.000;
-    public static double D = 0.0007;
-    public static double F = 0.1;
-
-    public static double MAX_POWER = 0.8;
-    public static double HOMING_POWER = 0.10;
+    public static double MAX_POWER = 0.6;
+    public static double STATIC_FF = 0.06;
+    public static double ANGLE_DEADBAND_DEG = 0.75;
 
     public static double TICKS_PER_DEG = 5.87;
 
-    // Real mechanical limits
-    public static double HARD_LEFT = 310;
-    public static double HARD_RIGHT = 50;
-
-    // Soft protection limits (keeps turret safe)
+    // Soft limits
     public static double SOFT_LEFT = 300;
     public static double SOFT_RIGHT = 60;
-
-    // Shot correction (offset based on distance)
-    public static double SHOT_OFFSET_COEFFICIENT = 1.5;
-
-    // Vision frame alignment (Limelight botpose is meters; Pedro uses inches with a corner origin)
-    // Limelight botpose is field-centered (0,0 at center, meters). Pedro uses inches from bottom-left corner.
-    public static double LIMELIGHT_FIELD_X_OFFSET_IN = 72.0;   // center -> +72" to corner in X
-    public static double LIMELIGHT_FIELD_Y_OFFSET_IN = 72.0;   // center -> +72" to corner in Y
-    public static double LIMELIGHT_HEADING_OFFSET_DEG = 0.0;   // set if yaw frames differ (0 if aligned)
-    public static double VISION_POS_THRESHOLD_IN = 2.0;       // minimum delta before applying pose correction
-    public static double VISION_HEADING_THRESHOLD_DEG = 2.0;  // heading delta threshold for correction
-
-    public static boolean ENABLE_TRACKING = true;
-    public static boolean ENABLE_VISION_CORRECTION = true;
 
     // =====================================================================
     // --------------------------- HARDWARE --------------------------------
     // =====================================================================
-
     private final DcMotorEx motor;
     private final Servo blocker;
     private final DigitalChannel leftLimit, rightLimit;
-    private final Limelight3A cam;
     private final Follower follower;
 
     private final PIDFController pid;
     private final FtcDashboard dashboard = FtcDashboard.getInstance();
 
-    // Target XY
-    private double targetX = 0;
-    private double targetY = 0;
-
-    // Manual toggle
+    private double fieldAngle = 0.0; // Desired field angle
     private boolean blocked = true;
     private boolean prevSquare = false;
 
     private boolean homed = false;
+    private double lastPower = 0.0; // For slew smoothing
 
     // =====================================================================
-    // ---------------------------- CONSTRUCTOR -----------------------------
+    // --------------------------- CONSTRUCTOR -----------------------------
     // =====================================================================
-
     public AutoAimingTurret(HardwareMap map, Follower follower) {
-
         this.follower = follower;
 
         motor = map.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
@@ -94,17 +65,12 @@ public class AutoAimingTurret {
         leftLimit = map.get(DigitalChannel.class, Constants.HardwareConfig.TURRET_LIMIT_LEFT);
         rightLimit = map.get(DigitalChannel.class, Constants.HardwareConfig.TURRET_LIMIT_RIGHT);
 
-        cam = map.get(Limelight3A.class, Constants.HardwareConfig.LIMELIGHT_NAME);
-
         leftLimit.setMode(DigitalChannel.Mode.INPUT);
         rightLimit.setMode(DigitalChannel.Mode.INPUT);
 
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        // IMPORTANT → Fixes the "moves only left" issue
-        motor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         pid = new PIDFController(new PIDFCoefficients(P, I, D, F));
 
@@ -113,13 +79,12 @@ public class AutoAimingTurret {
     }
 
     // =====================================================================
-    // ------------------------------- HOMING -------------------------------
+    // ------------------------ HOMING LOGIC --------------------------------
     // =====================================================================
-
     public void home() {
         if (homed) return;
 
-        motor.setPower(-HOMING_POWER);
+        motor.setPower(-0.10);
 
         if (isRightPressed()) {
             motor.setPower(0);
@@ -130,16 +95,14 @@ public class AutoAimingTurret {
     }
 
     // =====================================================================
-    // ------------------------ MANUAL CONTROL ------------------------------
+    // ------------------------ MANUAL CONTROL -----------------------------
     // =====================================================================
-
     public void manualUpdate(Gamepad gp) {
 
         double pwr = 0;
 
         if (gp.left_bumper && !isLeftPressed())
             pwr = +Constants.TurretConfig.TURRET_SPEED;
-
         else if (gp.right_bumper && !isRightPressed())
             pwr = -Constants.TurretConfig.TURRET_SPEED;
 
@@ -157,21 +120,19 @@ public class AutoAimingTurret {
     }
 
     // =====================================================================
-    // ---------------------------- SET TARGET ------------------------------
+    // ----------------------- SET FIELD ANGLE -----------------------------
     // =====================================================================
-
-    public void setTarget(double x, double y) {
-        targetX = x;
-        targetY = y;
+    public void setFieldAngle(double deg) {
+        fieldAngle = deg;
     }
 
-    public double getTargetX() { return targetX; }
-    public double getTargetY() { return targetY; }
+    public double getFieldAngle() {
+        return fieldAngle;
+    }
 
     // =====================================================================
-    // -------------------------- MAIN UPDATE LOOP --------------------------
+    // ----------------------- MAIN UPDATE LOOP -----------------------------
     // =====================================================================
-
     public void update() {
 
         if (!homed) {
@@ -180,87 +141,44 @@ public class AutoAimingTurret {
         }
 
         Pose pose = follower.getPose();
-        double headingDeg = Math.toDegrees(follower.getHeading());
+        double headingDeg = Math.toDegrees(pose.getHeading());
 
-        if (ENABLE_VISION_CORRECTION)
-            applyVisionCorrection(pose, headingDeg);
-
-        if (!ENABLE_TRACKING)
-            return;
-
-        // Compute desired turret angle in field frame
-        double fieldAngle = Math.toDegrees(Math.atan2(
-                targetY - pose.getY(),
-                targetX - pose.getX()
-        ));
-
-        // Convert to turret frame (forward = 180°)
-        double turretTarget = norm(fieldAngle - headingDeg + 180);
-
-        // Shot offset correction (based on distance)
-        double dist = Math.hypot(targetX - pose.getX(), targetY - pose.getY());
-        turretTarget += dist * SHOT_OFFSET_COEFFICIENT;
-
-        turretTarget = norm(turretTarget);
-
-        // Safety — stay inside soft limits
-        if (!withinSoftLimits(turretTarget)) {
-            motor.setPower(0);
-            return;
-        }
-
-        // PID tracking
-        pid.setCoefficients(new PIDFCoefficients(P, I, D, F));
-        pid.setTargetPosition(turretTarget);
+        // Desired turret angle in turret frame
+        double turretTarget = wrap(fieldAngle - headingDeg + 180);
 
         double current = getAngle();
         double error = shortestError(current, turretTarget);
 
-        pid.updatePosition(current + error);
-
-        double out = clamp(pid.run(), -MAX_POWER, MAX_POWER);
-
-        setPower(out);
-
-        sendTelemetry(turretTarget, current, out, error, dist);
-    }
-
-    // =====================================================================
-    // ----------------------- VISION ODOMETRY FIX ---------------------------
-    // =====================================================================
-
-    private void applyVisionCorrection(Pose current, double headingDeg) {
-
-        LLResult r = cam.getLatestResult();
-        if (r == null || !r.isValid()) return;
-
-        Pose3D bot = r.getBotpose();
-        if (bot == null) return;
-
-        // Limelight botpose is in meters, field-centered. Convert to inches and apply optional offsets
-        double xIn = bot.getPosition().x * 39.3701 + LIMELIGHT_FIELD_X_OFFSET_IN;
-        double yIn = bot.getPosition().y * 39.3701 + LIMELIGHT_FIELD_Y_OFFSET_IN;
-
-        // Yaw from Limelight is radians; convert to degrees for comparison, keep radians for follower
-        double yawRad = bot.getOrientation().getYaw();
-        double yawDeg = Math.toDegrees(yawRad) + LIMELIGHT_HEADING_OFFSET_DEG;
-        yawRad = Math.toRadians(yawDeg); // keep follower pose consistent with any heading offset
-
-        double dx = xIn - current.getX();
-        double dy = yIn - current.getY();
-
-        if (Math.hypot(dx, dy) > VISION_POS_THRESHOLD_IN ||
-                Math.abs(yawDeg - headingDeg) > VISION_HEADING_THRESHOLD_DEG) {
-            follower.setPose(new Pose(xIn, yIn, yawRad));
+        // Deadband: stop motor if close enough
+        if (Math.abs(error) < ANGLE_DEADBAND_DEG) {
+            setPower(0);
+            lastPower = 0;
+            return;
         }
+
+        // PID coefficients from live dashboard
+        pid.setCoefficients(new PIDFCoefficients(P, I, D, F));
+        pid.setTargetPosition(turretTarget);
+
+        pid.updatePosition(current);
+        double power = clamp(pid.run(), -MAX_POWER, MAX_POWER);
+
+        // Add static feedforward
+        if (power != 0) power += Math.signum(power) * STATIC_FF;
+
+        // Optional slew smoothing
+        power = smoothPower(power, 0.03);
+
+        setPower(power);
+
+        sendTelemetry(turretTarget, current, power, error);
     }
 
     // =====================================================================
-    // --------------------------- UTILITIES --------------------------------
+    // ------------------------- UTILITIES --------------------------------
     // =====================================================================
-
     public double getAngle() {
-        return norm(motor.getCurrentPosition() / TICKS_PER_DEG);
+        return wrap(motor.getCurrentPosition() / TICKS_PER_DEG);
     }
 
     private boolean isLeftPressed() {
@@ -274,23 +192,16 @@ public class AutoAimingTurret {
     private void setPower(double p) {
         if (p > 0 && isLeftPressed()) p = 0;
         if (p < 0 && isRightPressed()) p = 0;
-
         motor.setPower(p);
     }
 
-    private boolean withinSoftLimits(double angle) {
-        if (angle >= SOFT_RIGHT && angle <= 360) return true;
-        if (angle >= 0 && angle <= SOFT_LEFT) return true;
-        return false;
-    }
-
     private double shortestError(double current, double target) {
-        double diff = norm(target - current);
+        double diff = wrap(target - current);
         if (diff > 180) diff -= 360;
         return diff;
     }
 
-    private double norm(double deg) {
+    private double wrap(double deg) {
         return (deg % 360 + 360) % 360;
     }
 
@@ -298,24 +209,27 @@ public class AutoAimingTurret {
         return Math.max(lo, Math.min(hi, v));
     }
 
-    // =====================================================================
-    // ----------------------------- TELEMETRY ------------------------------
-    // =====================================================================
+    private double smoothPower(double target, double maxDelta) {
+        double delta = clamp(target - lastPower, -maxDelta, maxDelta);
+        lastPower += delta;
+        return lastPower;
+    }
 
-    private void sendTelemetry(double target, double current, double out, double err, double dist) {
+    // =====================================================================
+    // ------------------------- TELEMETRY ---------------------------------
+    // =====================================================================
+    private void sendTelemetry(double target, double current, double power, double error) {
         TelemetryPacket packet = new TelemetryPacket();
-
         packet.put("Turret Angle", current);
         packet.put("Turret Target", target);
-        packet.put("Error", err);
-        packet.put("Power", out);
-        packet.put("Distance to Target", dist);
-
-        packet.put("Left Limit", isLeftPressed());
-        packet.put("Right Limit", isRightPressed());
+        packet.put("Error", error);
+        packet.put("Motor Power", power);
+        packet.put("P", P);
+        packet.put("I", I);
+        packet.put("D", D);
+        packet.put("Deadband", ANGLE_DEADBAND_DEG);
+        packet.put("Static FF", STATIC_FF);
         packet.put("Homed", homed);
-        packet.put("Tracking Enabled", ENABLE_TRACKING);
-        packet.put("Vision Enabled", ENABLE_VISION_CORRECTION);
 
         dashboard.sendTelemetryPacket(packet);
     }
