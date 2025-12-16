@@ -9,8 +9,8 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.control.PIDFCoefficients;
 
+
 import com.qualcomm.robotcore.hardware.*;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
 
@@ -128,6 +128,14 @@ public class AutoAimingTurret {
 
     public double getFieldAngle() {
         return fieldAngle;
+    }
+
+    public double findingAngle(Pose robotPose, Pose TowerPose){
+        double sideOne = Math.abs(TowerPose.getX() - robotPose.getX());
+        double sideTwo = Math.abs(TowerPose.getY() - robotPose.getY());
+        double angleMath = Math.atan(sideOne/sideTwo);
+        double angle = Math.toDegrees(angleMath);
+        return angle;
     }
 
     // =====================================================================
