@@ -19,7 +19,7 @@ public class TeleOpWithAutoAim extends OpMode {
         follower = Constants.createFollower(hardwareMap);
         robot = new Robot(hardwareMap, follower);
 
-        robot.autoAimingTurret.setFieldAngle(45);
+        robot.autoAimingTurret.setTowerPosition(new Pose(159.59, 130.03));
 
         robot.shooter.setRPM(0);
 
@@ -37,7 +37,7 @@ public class TeleOpWithAutoAim extends OpMode {
 
     @Override
     public void loop() {
-
+        robot.shooter.setRPM(0);
         // Drive & mechanisms
         robot.UpdateGamePad1(gamepad1);
         robot.UpdateGamePad2AutoAim(gamepad2);
@@ -56,8 +56,10 @@ public class TeleOpWithAutoAim extends OpMode {
         telemetry.addData("Lift Servo Position", "%.2f", robot.intake.getLiftServoPosition());
         telemetry.addData("Shooter State", robot.shooter.getCurrentState());
 
+        telemetry.addData("TargetTicks", robot.autoAimingTurret.turretTargetTicks);
+
         telemetry.addData("Turret Field Angle (deg)",
-                robot.autoAimingTurret.getFieldAngle());
+                robot.autoAimingTurret.targetFieldDeg);
 
         telemetry.update();
     }

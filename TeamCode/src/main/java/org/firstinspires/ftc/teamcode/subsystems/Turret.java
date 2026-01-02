@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import androidx.annotation.NonNull;
+
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,7 +20,6 @@ public class Turret {
     private final DigitalChannel turretLimitRight;
     private boolean isShooterBlocked = true;
     private boolean previousSquareButtonState = false;
-    double offset = 0;
 
     private static final int TICKS_PER_REV = 4096;
     private static final double GEAR_RATIO = 6.25;
@@ -44,15 +45,8 @@ public class Turret {
         // Start with the shooter blocker in the blocking position
         setShooterBlockerPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
 
-        turretPID.setCoefficients(new PIDFCoefficients(0.01, 0, 0, 0)); //Set this
     }
 
-    public void setTargetPose(double deg){
-        double robotDeg = 180 - deg;
-        while (robotDeg > 360){robotDeg -= 360;}
-        while (robotDeg < 360){robotDeg += 360;}
-        turretPID.setTargetPosition((robotDeg + offset));
-    }
 
     public void update(){
         double curAngle = getAngle();
@@ -71,11 +65,7 @@ public class Turret {
         return ticksToDegrees(turretMotor.getCurrentPosition());
     }
 
-    public double getTicks() {
-        return turretMotor.getTargetPosition();
-    }
-
-    public void manualUpdate(Gamepad gamepad) {
+    public void manualUpdate(@NonNull Gamepad gamepad) {
 
         double turretPower = 0;
         if (gamepad.left_bumper && !isLeftLimitPressed())
@@ -127,14 +117,8 @@ public class Turret {
     public void setShooterBlockerPosition(double position) {
         shooterBlocker.setPosition(position);
     }
-    public double getMotorPower() {
-        return turretMotor.getPower();
-    }
     public double getShooterBlockerPosition() {
         return shooterBlocker.getPosition();
-    }
-    public int getEncoderTicks() {
-        return turretMotor.getCurrentPosition();
     }
     public boolean isLeftLimitPressed() { return !turretLimitLeft.getState();}
     public boolean isRightLimitPressed() { return !turretLimitRight.getState();}

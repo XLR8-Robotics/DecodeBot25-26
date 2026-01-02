@@ -9,7 +9,6 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.control.PIDFCoefficients;
 
-
 import com.qualcomm.robotcore.hardware.*;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
@@ -17,9 +16,7 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 @Config
 public class AutoAimingTurret {
 
-    // =====================================================================
-    // -------------------------- LIVE TUNABLE -----------------------------
-    // =====================================================================
+    // ===================== LIVE TUNING =====================
     public static double P = 0.006;
     public static double I = 0.0;
     public static double D = 0.00025;
@@ -31,31 +28,36 @@ public class AutoAimingTurret {
 
     public static double TICKS_PER_DEG = 5.87;
 
-    // Soft limits
-    public static double SOFT_LEFT = 300;
-    public static double SOFT_RIGHT = 60;
+    // Turret physical limits (measured)
+    private static final double RAW_RIGHT_LIMIT_TICKS = -19;
+    private static final double RAW_LEFT_LIMIT_TICKS  = 770;
 
-    // =====================================================================
-    // --------------------------- HARDWARE --------------------------------
-    // =====================================================================
+    // ===================== HARDWARE =====================
     private final DcMotorEx motor;
     private final Servo blocker;
     private final DigitalChannel leftLimit, rightLimit;
     private final Follower follower;
-
     private final PIDFController pid;
     private final FtcDashboard dashboard = FtcDashboard.getInstance();
 
-    private double fieldAngle = 0.0; // Desired field angle
+    private Pose towerPosition;
+
+    private boolean homed = false;
     private boolean blocked = true;
     private boolean prevSquare = false;
 
-    private boolean homed = false;
-    private double lastPower = 0.0; // For slew smoothing
+    private double lastPower = 0.0;
+    public double turretTargetTicks = 0.0;
+    public double targetFieldDeg;
 
-    // =====================================================================
-    // --------------------------- CONSTRUCTOR -----------------------------
-    // =====================================================================
+    // Center offset (calculated at startup)
+    private double centerOffsetTicks = 0.0;
+
+    // Limits relative to center
+    private double RIGHT_LIMIT_TICKS;
+    private double LEFT_LIMIT_TICKS;
+
+    // ===================== CONSTRUCTOR =====================
     public AutoAimingTurret(HardwareMap map, Follower follower) {
         this.follower = follower;
 
@@ -68,125 +70,90 @@ public class AutoAimingTurret {
         leftLimit.setMode(DigitalChannel.Mode.INPUT);
         rightLimit.setMode(DigitalChannel.Mode.INPUT);
 
+        // ================== RESET ENCODER ==================
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // Define center offset (we treat current position as center)
+        centerOffsetTicks = motor.getCurrentPosition();
+
+        // Calculate limits relative to center
+        RIGHT_LIMIT_TICKS = RAW_RIGHT_LIMIT_TICKS - centerOffsetTicks;
+        LEFT_LIMIT_TICKS  = RAW_LEFT_LIMIT_TICKS - centerOffsetTicks;
+
         pid = new PIDFController(new PIDFCoefficients(P, I, D, F));
 
+        // Start blocked
         blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
         blocked = true;
     }
 
-    // =====================================================================
-    // ------------------------ HOMING LOGIC --------------------------------
-    // =====================================================================
-    public void home() {
-        if (homed) return;
-
-        motor.setPower(-0.10);
-
-        if (isRightPressed()) {
-            motor.setPower(0);
-            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            homed = true;
-        }
+    // ===================== ANGLE MATH =====================
+    public double findingAngle(Pose robotPose, Pose towerPose) {
+        double dx = towerPose.getX() - robotPose.getX();
+        double dy = towerPose.getY() - robotPose.getY();
+        return Math.toDegrees(Math.atan2(dy, dx));
     }
 
-    // =====================================================================
-    // ------------------------ MANUAL CONTROL -----------------------------
-    // =====================================================================
-    public void manualUpdate(Gamepad gp) {
-
-        double pwr = 0;
-
-        if (gp.left_bumper && !isLeftPressed())
-            pwr = +Constants.TurretConfig.TURRET_SPEED;
-        else if (gp.right_bumper && !isRightPressed())
-            pwr = -Constants.TurretConfig.TURRET_SPEED;
-
-        setPower(pwr);
-
-        if (gp.square && !prevSquare) {
-            blocked = !blocked;
-            blocker.setPosition(
-                    blocked ?
-                            Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION :
-                            Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION
-            );
-        }
-        prevSquare = gp.square;
-    }
-
-    // =====================================================================
-    // ----------------------- SET FIELD ANGLE -----------------------------
-    // =====================================================================
-    public void setFieldAngle(double deg) {
-        fieldAngle = deg;
-    }
-
-    public double getFieldAngle() {
-        return fieldAngle;
-    }
-
-    public double findingAngle(Pose robotPose, Pose TowerPose){
-        double sideOne = Math.abs(TowerPose.getX() - robotPose.getX());
-        double sideTwo = Math.abs(TowerPose.getY() - robotPose.getY());
-        double angleMath = Math.atan(sideOne/sideTwo);
-        double angle = Math.toDegrees(angleMath);
+    private double normalizeAngle(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
         return angle;
     }
 
-    // =====================================================================
-    // ----------------------- MAIN UPDATE LOOP -----------------------------
-    // =====================================================================
+    private double clamp(double v, double lo, double hi) {
+        return Math.max(lo, Math.min(hi, v));
+    }
+
+    // ===================== UPDATE LOOP =====================
     public void update() {
-
-        if (!homed) {
-            home();
-            return;
-        }
-
         Pose pose = follower.getPose();
-        double headingDeg = Math.toDegrees(pose.getHeading());
 
-        // Desired turret angle in turret frame
-        double turretTarget = wrap(fieldAngle - headingDeg + 180);
+        double robotHeadingDeg = Math.toDegrees(pose.getHeading());
+        targetFieldDeg = findingAngle(pose, towerPosition);
 
-        double current = getAngle();
-        double error = shortestError(current, turretTarget);
+        // Turret-relative angle
+        double turretTargetDeg = normalizeAngle(targetFieldDeg - robotHeadingDeg);
 
-        // Deadband: stop motor if close enough
-        if (Math.abs(error) < ANGLE_DEADBAND_DEG) {
+        // Convert to ticks
+        turretTargetTicks = turretTargetDeg * TICKS_PER_DEG;
+
+        // Clamp to safe turret limits
+        turretTargetTicks = clamp(turretTargetTicks, RIGHT_LIMIT_TICKS, LEFT_LIMIT_TICKS);
+
+        // Read current ticks relative to center
+        double currentTicks = motor.getCurrentPosition() - centerOffsetTicks;
+        double error = turretTargetTicks - currentTicks;
+
+        // Deadband
+        if (Math.abs(error) < ANGLE_DEADBAND_DEG * TICKS_PER_DEG) {
             setPower(0);
             lastPower = 0;
             return;
         }
 
-        // PID coefficients from live dashboard
+        // PID
         pid.setCoefficients(new PIDFCoefficients(P, I, D, F));
-        pid.setTargetPosition(turretTarget);
+        pid.setTargetPosition(turretTargetTicks);
+        pid.updatePosition(currentTicks);
 
-        pid.updatePosition(current);
         double power = clamp(pid.run(), -MAX_POWER, MAX_POWER);
-
-        // Add static feedforward
         if (power != 0) power += Math.signum(power) * STATIC_FF;
-
-        // Optional slew smoothing
         power = smoothPower(power, 0.03);
 
         setPower(power);
-
-        sendTelemetry(turretTarget, current, power, error);
+        sendTelemetry(currentTicks, power, error);
     }
 
-    // =====================================================================
-    // ------------------------- UTILITIES --------------------------------
-    // =====================================================================
-    public double getAngle() {
-        return wrap(motor.getCurrentPosition() / TICKS_PER_DEG);
+    // ===================== SAFETY =====================
+    private void setPower(double p) {
+        double pos = motor.getCurrentPosition() - centerOffsetTicks;
+        if (p > 0 && pos >= LEFT_LIMIT_TICKS)  p = 0;
+        if (p < 0 && pos <= RIGHT_LIMIT_TICKS) p = 0;
+        if (isLeftPressed() && p > 0) p = 0;
+        if (isRightPressed() && p < 0) p = 0;
+        motor.setPower(p);
     }
 
     private boolean isLeftPressed() {
@@ -197,48 +164,25 @@ public class AutoAimingTurret {
         return !rightLimit.getState();
     }
 
-    private void setPower(double p) {
-        if (p > 0 && isLeftPressed()) p = 0;
-        if (p < 0 && isRightPressed()) p = 0;
-        motor.setPower(p);
-    }
-
-    private double shortestError(double current, double target) {
-        double diff = wrap(target - current);
-        if (diff > 180) diff -= 360;
-        return diff;
-    }
-
-    private double wrap(double deg) {
-        return (deg % 360 + 360) % 360;
-    }
-
-    private double clamp(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
-
     private double smoothPower(double target, double maxDelta) {
         double delta = clamp(target - lastPower, -maxDelta, maxDelta);
         lastPower += delta;
         return lastPower;
     }
 
-    // =====================================================================
-    // ------------------------- TELEMETRY ---------------------------------
-    // =====================================================================
-    private void sendTelemetry(double target, double current, double power, double error) {
+    // ===================== TELEMETRY =====================
+    private void sendTelemetry(double current, double power, double error) {
         TelemetryPacket packet = new TelemetryPacket();
-        packet.put("Turret Angle", current);
-        packet.put("Turret Target", target);
+        packet.put("Turret Ticks", current);
+        packet.put("Target Ticks", turretTargetTicks);
         packet.put("Error", error);
-        packet.put("Motor Power", power);
-        packet.put("P", P);
-        packet.put("I", I);
-        packet.put("D", D);
-        packet.put("Deadband", ANGLE_DEADBAND_DEG);
-        packet.put("Static FF", STATIC_FF);
+        packet.put("Power", power);
         packet.put("Homed", homed);
-
         dashboard.sendTelemetryPacket(packet);
+    }
+
+    // ===================== SETTERS =====================
+    public void setTowerPosition(Pose pose) {
+        towerPosition = pose;
     }
 }
