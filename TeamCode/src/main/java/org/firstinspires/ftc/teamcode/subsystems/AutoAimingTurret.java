@@ -9,34 +9,39 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.control.PIDFCoefficients;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.*;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
 @Config
 public class AutoAimingTurret {
 
     // ===================== LIVE TUNING =====================
-    public static double P = 0.006;
-    public static double I = 0.0;
-    public static double D = 0.00025;
-    public static double F = 0.0;
+    public static double P = 0.05;
+    public static double I = 0.01;
+    public static double D = 0.01;
+    public static double F = 0.5;
 
-    public static double MAX_POWER = 0.6;
-    public static double STATIC_FF = 0.06;
+    public static double MAX_POWER = 0.9;
+    public static double STATIC_FF = 0.006;
     public static double ANGLE_DEADBAND_DEG = 0.75;
 
     public static double TICKS_PER_DEG = 5.87;
 
     // Turret physical limits (measured)
-    private static final double RAW_RIGHT_LIMIT_TICKS = -19;
-    private static final double RAW_LEFT_LIMIT_TICKS  = 770;
+    private static final double RAW_RIGHT_LIMIT_TICKS = -394;
+    private static final double RAW_LEFT_LIMIT_TICKS  = 394;
+    public final Limelight limelightHardware;
+    public Pose limeLightPositon;
 
     // ===================== HARDWARE =====================
     private final DcMotorEx motor;
     private final Servo blocker;
     private final DigitalChannel leftLimit, rightLimit;
-    private final Follower follower;
+    public final Follower follower;
     private final PIDFController pid;
     private final FtcDashboard dashboard = FtcDashboard.getInstance();
 
@@ -60,6 +65,8 @@ public class AutoAimingTurret {
     // ===================== CONSTRUCTOR =====================
     public AutoAimingTurret(HardwareMap map, Follower follower) {
         this.follower = follower;
+
+        limelightHardware = new Limelight(map);
 
         motor = map.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
         blocker = map.get(Servo.class, Constants.HardwareConfig.SHOOTER_BLOCKER);
@@ -96,6 +103,14 @@ public class AutoAimingTurret {
         return Math.toDegrees(Math.atan2(dy, dx));
     }
 
+    public void setPIDFValues(double p, double i, double d, double f)
+    {
+            P = p;
+            I = i;
+            D = d;
+            F = f;
+    }
+
     private double normalizeAngle(double angle) {
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
@@ -108,7 +123,10 @@ public class AutoAimingTurret {
 
     // ===================== UPDATE LOOP =====================
     public void update() {
+        limelightHardware.updateResult();
         Pose pose = follower.getPose();
+        Pose3D llPose = limelightHardware.getLatestResult().getBotpose();
+        limeLightPositon = new Pose(llPose.getPosition().x + 72, llPose.getPosition().y+72);
 
         double robotHeadingDeg = Math.toDegrees(pose.getHeading());
         targetFieldDeg = findingAngle(pose, towerPosition);
