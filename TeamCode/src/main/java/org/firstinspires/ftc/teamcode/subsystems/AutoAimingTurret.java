@@ -20,6 +20,21 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 public class AutoAimingTurret {
 
     // ===================== LIVE TUNING =====================
+    /*
+     * PID tuning quick guide (do this with a fresh battery):
+     * 1) Set I = 0, D = 0. Raise P until it starts to oscillate, then back off ~20–30%.
+     * 2) Add F/STATIC_FF so the turret moves with almost zero sag when commanded (enough to overcome friction,
+     *    but not so much that it creeps when holding still).
+     * 3) Add a little D to damp overshoot. If motion feels “sticky” or noisy, lower D.
+     * 4) Add small I only to remove residual steady-state error; reduce if it keeps drifting after direction flips.
+     * 5) Use MAX_POWER to cap speed if the turret overshoots at long moves.
+     *
+     * Other helpful knobs:
+     * - ANGLE_DEADBAND_DEG: raise slightly if the turret chatters when on target.
+     * - SMOOTH_MAX_DELTA_FAR / NEAR: rate limits for power changes. Higher FAR speeds long moves,
+     *   lower NEAR helps it settle without overshoot.
+     * - LARGE_ERROR_DEG: threshold deciding which ramp (FAR vs NEAR) to use.
+     */
     public static double P = 0.05;
     public static double I = 0.01;
     public static double D = 0.01;
@@ -28,6 +43,11 @@ public class AutoAimingTurret {
     public static double MAX_POWER = 0.9;
     public static double STATIC_FF = 0.006;
     public static double ANGLE_DEADBAND_DEG = 0.75;
+    // Power ramp limits so the turret can spin faster when far away but still
+    // settle smoothly near the target.
+    public static double SMOOTH_MAX_DELTA_FAR = 0.18;
+    public static double SMOOTH_MAX_DELTA_NEAR = 0.05;
+    public static double LARGE_ERROR_DEG = 25.0;
 
     public static double TICKS_PER_DEG = 5.87;
 
@@ -67,6 +87,8 @@ public class AutoAimingTurret {
         this.follower = follower;
 
         limelightHardware = new Limelight(map);
+        // Ensure the Limelight begins streaming data; without this tx/ty stay 0.
+        limelightHardware.start();
 
         motor = map.get(DcMotorEx.class, Constants.HardwareConfig.TURRET_MOTOR);
         blocker = map.get(Servo.class, Constants.HardwareConfig.SHOOTER_BLOCKER);
@@ -111,6 +133,21 @@ public class AutoAimingTurret {
             F = f;
     }
 
+    /** Update non-PID tuning values at runtime from teleop/dashboard. */
+    public void setMotionTuning(double maxPower,
+                                double staticFf,
+                                double deadbandDeg,
+                                double smoothFar,
+                                double smoothNear,
+                                double largeErrorDeg) {
+        MAX_POWER = maxPower;
+        STATIC_FF = staticFf;
+        ANGLE_DEADBAND_DEG = deadbandDeg;
+        SMOOTH_MAX_DELTA_FAR = smoothFar;
+        SMOOTH_MAX_DELTA_NEAR = smoothNear;
+        LARGE_ERROR_DEG = largeErrorDeg;
+    }
+
     private double normalizeAngle(double angle) {
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
@@ -125,8 +162,13 @@ public class AutoAimingTurret {
     public void update() {
         limelightHardware.updateResult();
         Pose pose = follower.getPose();
-        Pose3D llPose = limelightHardware.getLatestResult().getBotpose();
-        limeLightPositon = new Pose(llPose.getPosition().x + 72, llPose.getPosition().y+72);
+
+        // Only trust Limelight data when a valid result exists.
+        LLResult llResult = limelightHardware.getLatestResult();
+        if (llResult != null && llResult.isValid() && llResult.getBotpose() != null) {
+            Pose3D llPose = llResult.getBotpose();
+            limeLightPositon = new Pose(llPose.getPosition().x + 72, llPose.getPosition().y + 72);
+        }
 
         double robotHeadingDeg = Math.toDegrees(pose.getHeading());
         targetFieldDeg = findingAngle(pose, towerPosition);
@@ -158,7 +200,7 @@ public class AutoAimingTurret {
 
         double power = clamp(pid.run(), -MAX_POWER, MAX_POWER);
         if (power != 0) power += Math.signum(power) * STATIC_FF;
-        power = smoothPower(power, 0.03);
+        power = smoothPower(power, Math.abs(error) > LARGE_ERROR_DEG * TICKS_PER_DEG ? SMOOTH_MAX_DELTA_FAR : SMOOTH_MAX_DELTA_NEAR);
 
         setPower(power);
         sendTelemetry(currentTicks, power, error);
