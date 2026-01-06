@@ -164,8 +164,16 @@ public class AutoAimingTurret {
         Pose pose = follower.getPose();
 
         // Only trust Limelight data when a valid result exists.
-        CorrectPosition(pose);
+        LLResult llResult = limelightHardware.getLatestResult();
+        if (llResult != null && llResult.isValid() && llResult.getBotpose() != null) {
+            Pose3D llPose = llResult.getBotpose();
+            limeLightPositon = new Pose((llPose.getPosition().x * 39.37) + 72, (llPose.getPosition().y * 39.37) + 72);
+            limeLightPositon.setHeading(pose.getHeading());
+        }
 
+        if (Math.abs(limeLightPositon.getX() - pose.getX()) > 5 || Math.abs(limeLightPositon.getY() - pose.getX()) > 5){
+            follower.setPose(limeLightPositon);
+        }
         double robotHeadingDeg = Math.toDegrees(pose.getHeading());
         targetFieldDeg = findingAngle(pose, towerPosition);
 
@@ -199,21 +207,7 @@ public class AutoAimingTurret {
         power = smoothPower(power, Math.abs(error) > LARGE_ERROR_DEG * TICKS_PER_DEG ? SMOOTH_MAX_DELTA_FAR : SMOOTH_MAX_DELTA_NEAR);
 
         setPower(power);
-    }
-
-    private void CorrectPosition(Pose pose)
-    {
-        LLResult llResult = limelightHardware.getLatestResult();
-
-        if (llResult != null && llResult.isValid() && llResult.getBotpose() != null) {
-            Pose3D llPose = llResult.getBotpose();
-            limeLightPositon = new Pose((llPose.getPosition().x * 39.37) + 72, (llPose.getPosition().y * 39.37) + 72);
-            limeLightPositon = limeLightPositon.setHeading(pose.getHeading());
-        }
-
-        if (Math.abs(limeLightPositon.getX() - pose.getX()) > 5 || Math.abs(limeLightPositon.getY() - pose.getX()) > 5){
-            follower.setPose(limeLightPositon);
-        }
+        sendTelemetry(currentTicks, power, error);
     }
 
     // ===================== SAFETY =====================
@@ -238,6 +232,17 @@ public class AutoAimingTurret {
         double delta = clamp(target - lastPower, -maxDelta, maxDelta);
         lastPower += delta;
         return lastPower;
+    }
+
+    // ===================== TELEMETRY =====================
+    private void sendTelemetry(double current, double power, double error) {
+        TelemetryPacket packet = new TelemetryPacket();
+        packet.put("Turret Ticks", current);
+        packet.put("Target Ticks", turretTargetTicks);
+        packet.put("Error", error);
+        packet.put("Power", power);
+        packet.put("Homed", homed);
+        dashboard.sendTelemetryPacket(packet);
     }
 
     // ===================== SETTERS =====================
