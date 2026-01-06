@@ -15,8 +15,8 @@ public class TeleOpWithAutoAim extends OpMode {
 
     public static double P = 0.05;
     public static double I = 0.01;
-    public static double D = 0.01;
-    public static double F = 0.5;
+    public static double D = 0.009;
+    public static double F = 0.0;
     // Extra turret tuning values exposed for live adjustment (match AutoAimingTurret defaults)
     public static double MAX_POWER = 0.9;
     public static double STATIC_FF = 0.006;
@@ -24,6 +24,8 @@ public class TeleOpWithAutoAim extends OpMode {
     public static double SMOOTH_MAX_DELTA_FAR = 0.18;
     public static double SMOOTH_MAX_DELTA_NEAR = 0.05;
     public static double LARGE_ERROR_DEG = 25.0;
+    public static double TOWER_X = 159.59;
+    public static double TOWER_Y = 130.03;
     private Robot robot;
     private Follower follower;
 
@@ -36,7 +38,8 @@ public class TeleOpWithAutoAim extends OpMode {
         robot.autoAimingTurret.setMotionTuning(
                 MAX_POWER, STATIC_FF, ANGLE_DEADBAND_DEG,
                 SMOOTH_MAX_DELTA_FAR, SMOOTH_MAX_DELTA_NEAR, LARGE_ERROR_DEG);
-        robot.autoAimingTurret.setTowerPosition(new Pose(159.59, 130.03));
+
+        robot.autoAimingTurret.setTowerPosition(new Pose(TOWER_X, TOWER_Y));
 
         robot.shooter.setRPM(0);
         robot.autoAimingTurret.limelightHardware.start();

@@ -167,9 +167,13 @@ public class AutoAimingTurret {
         LLResult llResult = limelightHardware.getLatestResult();
         if (llResult != null && llResult.isValid() && llResult.getBotpose() != null) {
             Pose3D llPose = llResult.getBotpose();
-            limeLightPositon = new Pose(llPose.getPosition().x + 72, llPose.getPosition().y + 72);
+            limeLightPositon = new Pose((llPose.getPosition().x * 39.37) + 72, (llPose.getPosition().y * 39.37) + 72);
+            limeLightPositon.setHeading(pose.getHeading());
         }
 
+        if (Math.abs(limeLightPositon.getX() - pose.getX()) > 5 || Math.abs(limeLightPositon.getY() - pose.getX()) > 5){
+            follower.setPose(limeLightPositon);
+        }
         double robotHeadingDeg = Math.toDegrees(pose.getHeading());
         targetFieldDeg = findingAngle(pose, towerPosition);
 
