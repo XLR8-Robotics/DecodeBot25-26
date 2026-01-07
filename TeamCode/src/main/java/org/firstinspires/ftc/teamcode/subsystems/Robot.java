@@ -67,6 +67,7 @@ public class Robot {
     }
     public void UpdateGamePad2AutoAim(Gamepad gamepad) {
         UpdateShootingControlsAutoAim(gamepad);
+        autoAimingTurret.changeBlockingPose(gamepad);
     }
     public void updateDriveControl(Gamepad gamepad) {
 

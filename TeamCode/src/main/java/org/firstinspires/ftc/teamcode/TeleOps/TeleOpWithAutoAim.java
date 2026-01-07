@@ -24,7 +24,7 @@ public class TeleOpWithAutoAim extends OpMode {
     public static double SMOOTH_MAX_DELTA_FAR = 0.18;
     public static double SMOOTH_MAX_DELTA_NEAR = 0.05;
     public static double LARGE_ERROR_DEG = 25.0;
-    public static double TOWER_X = 159.59;
+    public static double TOWER_X = 130;
     public static double TOWER_Y = 130.03;
     private Robot robot;
     private Follower follower;
@@ -41,10 +41,9 @@ public class TeleOpWithAutoAim extends OpMode {
 
         robot.autoAimingTurret.setTowerPosition(new Pose(TOWER_X, TOWER_Y));
 
-        robot.shooter.setRPM(0);
-        robot.autoAimingTurret.limelightHardware.start();
 
-        follower.setStartingPose(new Pose(110, -24, Math.toRadians(90)));
+
+        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
         follower.update();
 
         telemetry.addLine("TeleOpWithAutoAim Initialized");
@@ -58,7 +57,7 @@ public class TeleOpWithAutoAim extends OpMode {
 
     @Override
     public void loop() {
-        robot.shooter.setRPM(0);
+
         // Drive & mechanisms
         robot.autoAimingTurret.setPIDFValues(P, I, D, F);
         robot.autoAimingTurret.setMotionTuning(
@@ -80,11 +79,9 @@ public class TeleOpWithAutoAim extends OpMode {
         telemetry.addData("Hood Position", "%.2f", robot.shooter.getServoPosition());
         telemetry.addData("Lift Servo Position", "%.2f", robot.intake.getLiftServoPosition());
         telemetry.addData("Shooter State", robot.shooter.getCurrentState());
-        telemetry.addData("follower Heading", robot.autoAimingTurret.follower.getHeading());
+        telemetry.addData("follower Heading", Math.toDegrees(robot.autoAimingTurret.follower.getHeading()));
         telemetry.addData("follower x", robot.autoAimingTurret.follower.getPose().getX());
         telemetry.addData("follower Y", robot.autoAimingTurret.follower.getPose().getY());
-        telemetry.addData("lime light Pose x", robot.autoAimingTurret.limeLightPositon.getX());
-        telemetry.addData("lime light pose y", robot.autoAimingTurret.limeLightPositon.getY());
         telemetry.addData("TargetTicks", robot.autoAimingTurret.turretTargetTicks);
 
         telemetry.addData("Turret Field Angle (deg)",
