@@ -9,10 +9,13 @@ import com.pedropathing.control.PIDFController;
 import com.pedropathing.control.PIDFCoefficients;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.hardware.*;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.config.Constants;
+
+import java.util.List;
 
 @Config
 public class AutoAimingTurret {
@@ -32,6 +35,8 @@ public class AutoAimingTurret {
     public static double LARGE_ERROR_DEG = 25.0;
 
     public static double TICKS_PER_DEG = 5.87;
+    public static double BLOCKED_FIELD_ANGLE_DEG = 0.0;
+    public static long VISION_STALE_MS = 400;
 
     // ===================== TURRET LIMITS =====================
     private static final double RAW_RIGHT_LIMIT_TICKS = -394;
@@ -64,6 +69,8 @@ public class AutoAimingTurret {
     private double LEFT_LIMIT_TICKS;
 
     private long lastVisionUpdateMs = 0;
+    private long lastGoodVisionMs = 0;
+    private double lastGoodFieldDeg = BLOCKED_FIELD_ANGLE_DEG;
 
     private boolean isShooterBlocked = true;
     private boolean previousSquareButtonState = false;
@@ -95,6 +102,26 @@ public class AutoAimingTurret {
         pid = new PIDFController(new PIDFCoefficients(P, I, D, F));
 
         blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+    }
+
+    /**
+     * Extracts camera-relative angle (degrees) to the closest AprilTag target.
+     * Returns null when no usable fiducial pose is available.
+     */
+    private Double extractTargetAngleDeg(LLResult ll) {
+        if (ll == null || !ll.isValid()) return null;
+        List<LLResultTypes.FiducialResult> fiducials = ll.getFiducialResults();
+        if (fiducials == null || fiducials.isEmpty()) return null;
+
+        // Pick the first/closest tag; customize selection if needed
+        LLResultTypes.FiducialResult tag = fiducials.get(0);
+        Pose3D tagPoseCamera = tag.getTargetPose_CameraSpace();
+        if (tagPoseCamera == null) return null;
+
+        double x = tagPoseCamera.getPosition().x; // forward (meters)
+        double y = tagPoseCamera.getPosition().y; // left/right (meters)
+
+        return Math.toDegrees(Math.atan2(y, x));
     }
 
     // ===================== LIVE TUNING SETTERS =====================
@@ -141,17 +168,31 @@ public class AutoAimingTurret {
     // ===================== UPDATE LOOP =====================
     public void update() {
         limelightHardware.updateResult();
+        LLResult ll = limelightHardware.getLatestResult();
+        boolean visionValid = isVisionValid(ll);
+        boolean visionFresh = visionValid && (System.currentTimeMillis() - lastGoodVisionMs < VISION_STALE_MS);
 
         Pose robotPose = follower.getPose();
 
-        // Vision only corrects odometry
-        correctPosition(robotPose);
+        // Vision only corrects odometry when valid and rate-limited
+        if (visionValid) {
+            correctPosition(robotPose, ll);
+        }
 
         double robotHeadingDeg = Math.toDegrees(robotPose.getHeading());
-        targetFieldDeg = findingAngle(robotPose, towerPosition);
+        Double visionTurretAngleDeg = extractTargetAngleDeg(ll); // robot-relative angle to tag
 
-        double turretTargetDeg =
-                normalizeAngle(targetFieldDeg - robotHeadingDeg);
+        if (!isShooterBlocked && visionTurretAngleDeg != null && visionValid) {
+            targetFieldDeg = normalizeAngle(robotHeadingDeg + visionTurretAngleDeg);
+            lastGoodFieldDeg = targetFieldDeg;
+            lastGoodVisionMs = System.currentTimeMillis();
+        } else if (visionFresh) {
+            targetFieldDeg = lastGoodFieldDeg;
+        } else {
+            targetFieldDeg = BLOCKED_FIELD_ANGLE_DEG;
+        }
+
+        double turretTargetDeg = normalizeAngle(targetFieldDeg - robotHeadingDeg);
 
         turretTargetTicks = turretTargetDeg * TICKS_PER_DEG;
         turretTargetTicks = clamp(turretTargetTicks, RIGHT_LIMIT_TICKS, LEFT_LIMIT_TICKS);
@@ -183,8 +224,7 @@ public class AutoAimingTurret {
     }
 
     // ===================== VISION CORRECTION =====================
-    private void correctPosition(Pose odoPose) {
-        LLResult ll = limelightHardware.getLatestResult();
+    private void correctPosition(Pose odoPose, LLResult ll) {
         long now = System.currentTimeMillis();
 
         if (!isVisionValid(ll)) return;
