@@ -65,7 +65,7 @@ public class AutoAimingTurret {
 
     private long lastVisionUpdateMs = 0;
 
-    private boolean isShooterBlocked = true;
+    public boolean isShooterBlocked = true;
     private boolean previousSquareButtonState = false;
 
     // ===================== CONSTRUCTOR =====================
@@ -94,7 +94,7 @@ public class AutoAimingTurret {
 
         pid = new PIDFController(new PIDFCoefficients(P, I, D, F));
 
-        blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+        setShooterBlocked();
     }
 
     // ===================== LIVE TUNING SETTERS =====================
@@ -148,7 +148,8 @@ public class AutoAimingTurret {
         correctPosition(robotPose);
 
         double robotHeadingDeg = Math.toDegrees(robotPose.getHeading());
-        targetFieldDeg = findingAngle(robotPose, towerPosition);
+
+        targetFieldDeg = (isShooterBlocked) ? 50 : findingAngle(robotPose, towerPosition);
 
         double turretTargetDeg =
                 normalizeAngle(targetFieldDeg - robotHeadingDeg);
@@ -254,18 +255,18 @@ public class AutoAimingTurret {
             if (isShooterBlocked)
             {
                 setShooterUnBlocked();
-            } else
+            } if (!isShooterBlocked)
             {
-                setShooterUnBlocked();
+                setShooterBlocked();
             }
         }
         previousSquareButtonState = currentSquareButtonState;
     }
 
-    public void setShooterBlocked(){
+    public void setShooterUnBlocked(){
         blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
     }
-    public void setShooterUnBlocked(){
+    public void setShooterBlocked(){
         blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
     }
 }

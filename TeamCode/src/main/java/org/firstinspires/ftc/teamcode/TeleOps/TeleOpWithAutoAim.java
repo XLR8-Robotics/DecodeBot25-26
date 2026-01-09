@@ -34,6 +34,7 @@ public class TeleOpWithAutoAim extends OpMode {
         follower = Constants.createFollower(hardwareMap);
         robot = new Robot(hardwareMap, follower);
 
+        robot.shooter.setRPM(0);
         robot.autoAimingTurret.setPIDFValues(P, I, D, F);
         robot.autoAimingTurret.setMotionTuning(
                 MAX_POWER, STATIC_FF, ANGLE_DEADBAND_DEG,
@@ -57,7 +58,7 @@ public class TeleOpWithAutoAim extends OpMode {
 
     @Override
     public void loop() {
-
+        robot.shooter.setRPM(0);
         // Drive & mechanisms
         robot.autoAimingTurret.setPIDFValues(P, I, D, F);
         robot.autoAimingTurret.setMotionTuning(
@@ -83,6 +84,7 @@ public class TeleOpWithAutoAim extends OpMode {
         telemetry.addData("follower x", robot.autoAimingTurret.follower.getPose().getX());
         telemetry.addData("follower Y", robot.autoAimingTurret.follower.getPose().getY());
         telemetry.addData("TargetTicks", robot.autoAimingTurret.turretTargetTicks);
+        telemetry.addData("is shooter Blocked", robot.autoAimingTurret.isShooterBlocked);
 
         telemetry.addData("Turret Field Angle (deg)",
                 robot.autoAimingTurret.targetFieldDeg);

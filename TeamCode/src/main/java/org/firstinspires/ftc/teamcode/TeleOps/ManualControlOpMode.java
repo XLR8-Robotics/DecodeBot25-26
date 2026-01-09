@@ -53,6 +53,7 @@ public class ManualControlOpMode extends OpMode {
         telemetry.addData("Lift Servo Position", "%.2f", robot.intake.getLiftServoPosition());
         telemetry.addData("Shooter Stopper Position", "%.2f", robot.turret.getShooterBlockerPosition());
         telemetry.addData("Shooter States", robot.shooter.getCurrentState());
+
     }
 
     private void displaySensorTelemetry() {
