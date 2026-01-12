@@ -182,7 +182,36 @@ public class AutoAimingTurret {
 
         setPower(power);
     }
+    public void setTargetPosition(double targetDeg){
 
+        turretTargetTicks = targetDeg * TICKS_PER_DEG;
+        turretTargetTicks = clamp(turretTargetTicks, RIGHT_LIMIT_TICKS, LEFT_LIMIT_TICKS);
+
+        double currentTicks = motor.getCurrentPosition() - centerOffsetTicks;
+        double error = turretTargetTicks - currentTicks;
+
+        if (Math.abs(error) < ANGLE_DEADBAND_DEG * TICKS_PER_DEG) {
+            setPower(0);
+            lastPower = 0;
+            return;
+        }
+
+        pid.setCoefficients(new PIDFCoefficients(P, I, D, F));
+        pid.setTargetPosition(turretTargetTicks);
+        pid.updatePosition(currentTicks);
+
+        double power = clamp(pid.run(), -MAX_POWER, MAX_POWER);
+        if (power != 0) power += Math.signum(power) * STATIC_FF;
+
+        power = smoothPower(
+                power,
+                Math.abs(error) > LARGE_ERROR_DEG * TICKS_PER_DEG
+                        ? SMOOTH_MAX_DELTA_FAR
+                        : SMOOTH_MAX_DELTA_NEAR
+        );
+
+        setPower(power);
+    }
     // ===================== VISION CORRECTION =====================
     private void correctPosition(Pose odoPose) {
         LLResult ll = limelightHardware.getLatestResult();
