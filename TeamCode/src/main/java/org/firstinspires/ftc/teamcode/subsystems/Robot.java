@@ -72,7 +72,7 @@ public class Robot {
     public void updateDriveControl(Gamepad gamepad) {
 
         intake.updateIntake(gamepad);
-        basicDriveTrain.drive(-gamepad.left_stick_y, gamepad.left_stick_x, -gamepad.right_stick_x);
+        basicDriveTrain.drive(gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
     }
     public void UpdateShootingControls(Gamepad gamepad) {
         shooter.update(gamepad);

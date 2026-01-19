@@ -56,7 +56,7 @@ public class BlueSideFar extends LinearOpMode {
 
         waitForStart();
 
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, follower);
         robot.shooter.applyState(Shooter.ShooterAutoStates.FARAUTO);
         robot.shooter.setPIDFCoefficients(40 , 0, 2.5, 12);
         Paths paths = new Paths(follower);
@@ -67,6 +67,7 @@ public class BlueSideFar extends LinearOpMode {
 
             switch (pathState) {
                 case 0:
+                    setTurretAngle(0);
                     delayTime(4000);
                     pathState = 1;
                 case 1:
@@ -112,20 +113,46 @@ public class BlueSideFar extends LinearOpMode {
                     }
                     break;
                 case 8:
+
                     follower.followPath(paths.Path5);
-                    pathState = 9;
                     intakeStart();
+                    pathState = 82;
+                    break;
+                case 82:
+                    if(!follower.isBusy()) {
+                        follower.followPath(paths.Path52);
+                        pathState = 9;
+                    }
+
                     break;
                 case 9:
                     if(!follower.isBusy()) {
+                        //follower.setMaxPower(.6);
                         follower.followPath(paths.Path6);
+                        pathState = 92;
+
+                    }
+                    break;
+                case 92:
+                    if(!follower.isBusy()) {
+                        //follower.setMaxPower(.6);
+                        follower.followPath(paths.Path62);
+                        pathState = 93;
+                    //add delay between these later
+                    }
+                    break;
+                case 93:
+                    if(!follower.isBusy()) {
+                        //follower.setMaxPower(.6);
+                        follower.followPath(paths.Path63);
                         pathState = 10;
 
                     }
                     break;
+
                 case 10:
                     if(!follower.isBusy()) {
-                        delayTime(2000);
+                        //follower.setMaxPower(1);
                         intakeStop();
                         pathState = 11;
                     }
@@ -182,7 +209,7 @@ public class BlueSideFar extends LinearOpMode {
         robot.intake.setPower(0);
     }
     private void shootArtifacts() {
-        robot.turret.setShooterUnBlocked();
+        robot.autoAimingTurret.setShooterUnBlocked();
         ElapsedTime timer = new ElapsedTime();
         timer.startTime();
         while(timer.milliseconds() <= 2350)
@@ -197,7 +224,7 @@ public class BlueSideFar extends LinearOpMode {
            robot.intake.liftUp();
         }
         robot.intake.liftDown();
-        robot.turret.setShooterBlocked();
+        robot.autoAimingTurret.setShooterBlocked();
         intakeStop();
     }
     private void delayTime(double delayTime) {
@@ -217,7 +244,10 @@ public class BlueSideFar extends LinearOpMode {
         public PathChain Path3;
         public PathChain Path4;
         public PathChain Path5;
+        public PathChain Path52;
         public PathChain Path6;
+        public PathChain Path62;
+        public PathChain Path63;
         public PathChain Path7;
         public PathChain Path8;
 
@@ -228,7 +258,7 @@ public class BlueSideFar extends LinearOpMode {
                     .addPath(
                             new BezierLine(new Pose(55.300, 7.521), new Pose(62.244, 10.687))
                     )
-                    .setConstantHeadingInterpolation(Math.toRadians(117.5))
+                    .setConstantHeadingInterpolation(Math.toRadians(118.5))
                     .build();
 
             Path2 = follower
@@ -250,7 +280,7 @@ public class BlueSideFar extends LinearOpMode {
             Path4 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(19.378, 22.276), new Pose(60.470, 6.276))
+                            new BezierLine(new Pose(19.378, 22.276), new Pose(60.470, 14.276))
                     )
                     .setConstantHeadingInterpolation(Math.toRadians(125))
                     .build();
@@ -258,30 +288,55 @@ public class BlueSideFar extends LinearOpMode {
             Path5 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(60.470, 6.276), new Pose(30.963, 38.198))
+                            new BezierLine(new Pose(60.470, 14.276), new Pose(19, 5.276))
                     )
-                    .setConstantHeadingInterpolation(Math.toRadians(245))
+                    .setConstantHeadingInterpolation(Math.toRadians(210))
+                    .build();
+            Path52 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(19, 5.276), new Pose(40.724, -3))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(210))
                     .build();
 
             Path6 = follower
                     .pathBuilder()
-                    .addPath(new BezierLine(new Pose(30.963, 38.198), new Pose(30.742, 3.963)))
-                    .setConstantHeadingInterpolation(Math.toRadians(245))
+                    .addPath(new BezierLine(new Pose(40.724, -3), new Pose(30.742, -3)))
+                    .setConstantHeadingInterpolation(Math.toRadians(210))
+                    .build();
+            Path62 = follower
+                    .pathBuilder()
+                    //increase x 
+                    .addPath(
+                            new BezierLine(new Pose(30.742, -3), new Pose(40.724, -3))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(180))
+                    .build();
+            Path63 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(40.724, -3), new Pose(29.724, -3))
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(180))
                     .build();
 
             Path7 = follower
                     .pathBuilder()
-                    .addPath(new BezierLine(new Pose(30.742, 3.963), new Pose(60.244, 8.687)))
-                    .setConstantHeadingInterpolation(Math.toRadians(119))
+                    .addPath(new BezierLine(new Pose(29.724, -3), new Pose(60.244, 4.687)))
+                    .setConstantHeadingInterpolation(Math.toRadians(120))
                     .build();
             Path8 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(60.244, 8.687), new Pose(38.931, 12.166))
+                            new BezierLine(new Pose(60.244, 4.687), new Pose(38.931, 12.166))
                     )
                     .setConstantHeadingInterpolation(Math.toRadians(90))
                     .build();
         }
+    }
+    private void setTurretAngle(double deg){
+        robot.autoAimingTurret.setTargetPosition(deg);
     }
 
 }

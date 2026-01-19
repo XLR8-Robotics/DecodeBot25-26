@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.config.Constants.HardwareConfig;
  * - D-Pad Left: Back Right Motor
  * - D-Pad Right: Front Right Motor
  */
-@Disabled
+
 @TeleOp(name = "Motor Tester", group = "Test")
 public class MotorTesterOpMode extends LinearOpMode {
 

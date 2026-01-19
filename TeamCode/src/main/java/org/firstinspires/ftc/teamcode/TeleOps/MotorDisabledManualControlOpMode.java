@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOps;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -36,6 +37,7 @@ public class MotorDisabledManualControlOpMode extends OpMode {
         telemetry.addData("Controls", "GP1: Drive/Intake | GP2: Turret/Shooter");
         telemetry.update();
 
+        robot.shooter.setRPM(0);
         timer = new ElapsedTime();
     }
 

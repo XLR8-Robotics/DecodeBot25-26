@@ -293,9 +293,9 @@ public class AutoAimingTurret {
     }
 
     public void setShooterUnBlocked(){
-        blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
+        blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
     }
     public void setShooterBlocked(){
-        blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_ZERO_POSITION);
+        blocker.setPosition(Constants.TurretConfig.SHOOTER_BLOCKER_BLOCKING_POSITION);
     }
 }

@@ -56,7 +56,7 @@ public class BlueSideNear extends LinearOpMode {
 
         waitForStart();
 
-        robot = new Robot(hardwareMap);
+        robot = new Robot(hardwareMap, follower);
         robot.shooter.applyState(Shooter.ShooterAutoStates.BLUENEAR);
         robot.shooter.setPIDFCoefficients(40 , 0, 2.5, 12);
         while (opModeIsActive()) {
@@ -65,6 +65,7 @@ public class BlueSideNear extends LinearOpMode {
 
             switch (pathState) {
                 case 0:
+                    setTurretAngle(0);
                     delayTime(3000);
                     pathState = 1;
                     break;
@@ -194,7 +195,7 @@ public class BlueSideNear extends LinearOpMode {
         robot.intake.setPower(0);
     }
     private void shootArtifacts() {
-        robot.turret.setShooterUnBlocked();
+        robot.autoAimingTurret.setShooterUnBlocked();
         ElapsedTime timer = new ElapsedTime();
         timer.startTime();
         while(timer.milliseconds() <= 2350)
@@ -209,7 +210,7 @@ public class BlueSideNear extends LinearOpMode {
            robot.intake.liftUp();
         }
         robot.intake.liftDown();
-        robot.turret.setShooterBlocked();
+        robot.autoAimingTurret.setShooterBlocked();
         intakeStop();
     }
     private void delayTime(double delayTime) {
@@ -220,5 +221,8 @@ public class BlueSideNear extends LinearOpMode {
         {
              wait = "wait";
         }
+    }
+    private void setTurretAngle(double deg){
+        robot.autoAimingTurret.setTargetPosition(deg);
     }
 }
