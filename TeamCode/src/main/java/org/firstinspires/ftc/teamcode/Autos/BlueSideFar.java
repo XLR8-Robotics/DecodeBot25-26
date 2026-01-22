@@ -115,13 +115,13 @@ public class BlueSideFar extends LinearOpMode {
                 case 8:
 
                     follower.followPath(paths.Path5);
-                    intakeStart();
-                    pathState = 82;
+                    //intakeStart();
+                    pathState = 82 ;
                     break;
                 case 82:
                     if(!follower.isBusy()) {
-                        follower.followPath(paths.Path52);
-                        pathState = 9;
+                        robot.shooter.setRPM(0);
+                        pathState = -1;
                     }
 
                     break;
@@ -288,7 +288,7 @@ public class BlueSideFar extends LinearOpMode {
             Path5 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(60.470, 14.276), new Pose(19, 5.276))
+                            new BezierLine(new Pose(60.470, 14.276), new Pose(38.931, 12.166))
                     )
                     .setConstantHeadingInterpolation(Math.toRadians(210))
                     .build();
@@ -307,7 +307,7 @@ public class BlueSideFar extends LinearOpMode {
                     .build();
             Path62 = follower
                     .pathBuilder()
-                    //increase x 
+                    //increase x
                     .addPath(
                             new BezierLine(new Pose(30.742, -3), new Pose(40.724, -3))
                     )
