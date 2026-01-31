@@ -250,15 +250,15 @@ public class RedSideFar extends LinearOpMode {
             Path4 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(170, 12), new Pose(110, -10))
+                            new BezierLine(new Pose(170, 12), new Pose(112, -10))
                     )
-                    .setConstantHeadingInterpolation(Math.toRadians(48))
+                    .setConstantHeadingInterpolation(Math.toRadians(55))
                     .build();
 
             Path5 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(110, -10), new Pose(130, -7))
+                            new BezierLine(new Pose(112, -10), new Pose(130, -7))
                     )
                     .setConstantHeadingInterpolation(Math.toRadians(48))
                     .build();

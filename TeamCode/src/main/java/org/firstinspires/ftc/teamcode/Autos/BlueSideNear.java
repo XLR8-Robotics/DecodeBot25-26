@@ -26,12 +26,12 @@ public class BlueSideNear extends LinearOpMode {
 
 
     private final Pose startPose = new Pose(-152, 123, Math.toRadians(135)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(-119, 93, Math.toRadians(135)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
-    private final Pose PPGPose = new Pose(-125, 80, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose PGPPose = new Pose(-150, 80, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose scorePose = new Pose(-119, 93, Math.toRadians(136)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
+    private final Pose PPGPose = new Pose(-110, 78, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose PGPPose = new Pose(-150, 78, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose GPPPose = new Pose(-125, 55, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
-    private final Pose targetPose = new Pose(-150, 55, Math.toRadians(180)); // Example target
-    private final Pose scorePose2 = new Pose(-117, 91, Math.toRadians(150));
+    private final Pose targetPose = new Pose(-158, 55, Math.toRadians(180)); // Example target
+    private final Pose scorePose2 = new Pose(-117, 91, Math.toRadians(147));
     private final Pose scorePose3 = new Pose(-117, 91, Math.toRadians(145));
     private final Pose targetPose2 = new Pose(-153, 50, Math.toRadians(180)); // Example target
     private PathChain simplePath;
@@ -88,6 +88,7 @@ public class BlueSideNear extends LinearOpMode {
                     if(!follower.isBusy())
                     {
                         intakeStart();
+                        delayTime(500);
                         pathState = 5;
                     }
                     break;

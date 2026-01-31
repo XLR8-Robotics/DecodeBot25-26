@@ -26,13 +26,13 @@ public class RedSideNear extends LinearOpMode {
 
 
     private final Pose startPose = new Pose(152, 123, Math.toRadians(45)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(115, 89, Math.toRadians(42)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
+    private final Pose scorePose = new Pose(115, 89, Math.toRadians(33.5)); // Scoring Pose of our robot. It is facing the goal at a 115 degree angle.
     private final Pose PPGPose = new Pose(134, 84, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
     private final Pose PGPPose = new Pose(166, 84, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose GPPPose = new Pose(134, 64, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
     private final Pose targetPose = new Pose(174, 64, Math.toRadians(0)); // Example target
-    private final Pose scorePose2 = new Pose(117, 91, Math.toRadians(30));
-    private final Pose scorePose3 = new Pose(117, 91, Math.toRadians(38));
+    private final Pose scorePose2 = new Pose(117, 91, Math.toRadians(23));
+    private final Pose scorePose3 = new Pose(117, 91, Math.toRadians(24));
     private final Pose targetPose2 = new Pose(159, 64, Math.toRadians(0)); // Example target
     private PathChain simplePath;
     private Follower follower;
@@ -139,6 +139,7 @@ public class RedSideNear extends LinearOpMode {
                 case 13:
                     if(!follower.isBusy()) {
                         follower.followPath(buildPath(targetPose, GPPPose));
+                        robot.shooter.setRPM(2510);
                         pathState = 14;
                     }
                     break;

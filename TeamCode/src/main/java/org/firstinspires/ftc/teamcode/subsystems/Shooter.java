@@ -37,7 +37,7 @@ public class Shooter {
         FAR(Constants.ShooterConfig.SHOOTER_RPM_FAR, Constants.ShooterConfig.HOOD_POSITION_FAR),
         FARAUTO(Constants.ShooterConfig.SHOOTER_RPM_FAR_AUTO, Constants.ShooterConfig.HOOD_POSITION_FAR_AUTO),
         REDFAR(Constants.ShooterConfig.SHOOTER_RPM_FAR_AUTO_RED, Constants.ShooterConfig.HOOD_POSITION_FAR_AUTO),
-        BLUENEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR_BLUE, Constants.ShooterConfig.HOOD_POSITION_MEDIUM);
+        BLUENEAR(Constants.ShooterConfig.SHOOTER_RPM_NEAR_BLUE-10, Constants.ShooterConfig.HOOD_POSITION_MEDIUM);
         public final double rpm;
         public final double hoodPosition;
 
