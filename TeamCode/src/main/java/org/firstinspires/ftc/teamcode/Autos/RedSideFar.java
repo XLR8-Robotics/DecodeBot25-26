@@ -276,6 +276,7 @@ public class RedSideFar extends LinearOpMode {
                     .build();
             Path8 = follower
                     .pathBuilder()
+                    // y = 12.166
                     .addPath(
                             new BezierLine(new Pose(60.244, 8.687), new Pose(38.931, 12.166))
                     )

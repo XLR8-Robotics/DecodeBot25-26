@@ -282,7 +282,8 @@ public class BlueSideFar extends LinearOpMode {
                     .addPath(
                             new BezierLine(new Pose(19.378, 22.276), new Pose(60.470, 14.276))
                     )
-                    .setConstantHeadingInterpolation(Math.toRadians(125))
+                    //previouisly 125 on angle
+                    .setConstantHeadingInterpolation(Math.toRadians(130))
                     .build();
 
             Path5 = follower

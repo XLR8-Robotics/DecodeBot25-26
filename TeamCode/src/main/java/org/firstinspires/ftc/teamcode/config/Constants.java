@@ -138,7 +138,7 @@ public class Constants {
         
         public static double SHOOTER_RPM_FAR = 3150;
 
-        public static double SHOOTER_RPM_FAR_AUTO = 3210;
+        public static double SHOOTER_RPM_FAR_AUTO = 3190;
         public static double SHOOTER_RPM_FAR_AUTO_RED = 3180;
         public static double HOOD_POSITION_FAR = 0.25;
         public static double SHOOTER_RPM_IDLE = 1500;
